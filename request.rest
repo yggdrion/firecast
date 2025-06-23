@@ -1,0 +1,18 @@
+@address = 127.0.0.1:8000
+
+
+GET http://{{address}}
+
+###
+
+GET http://{{address}}/health
+
+###
+
+POST http://{{address}}/addvideo
+X-API-KEY: supersecret
+Content-Type: application/json
+
+{
+    "video_url": "https://www.youtube.com/watch?v=LDU_Txk06tM"
+}
