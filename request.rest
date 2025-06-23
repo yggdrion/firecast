@@ -5,7 +5,7 @@ GET http://{{address}}
 
 ###
 
-GET http://{{address}}/health
+GET http://{{address}}/healthz
 
 ###
 

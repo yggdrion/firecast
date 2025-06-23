@@ -1,0 +1,7 @@
+services:
+  firecast:
+    build: . # fixme with ghcr url
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
