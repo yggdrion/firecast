@@ -1,4 +1,4 @@
-pydantic-settings==2.10.0
+pydantic-settings==2.10.1
 uvicorn==0.34.3
 yt-dlp==2025.6.9
 paramiko==3.5.1
