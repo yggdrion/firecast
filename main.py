@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     SFTP_PORT: int
     SFTP_USER: str
     SFTP_PASSWORD: str
+    AZURACAST_API_KEY: str
 
     class Config:
         env_file = ".env"
