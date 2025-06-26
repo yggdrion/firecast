@@ -1,7 +1,9 @@
 name: 🐳 Build - Push - Release
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -19,16 +21,6 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           fetch-depth: 0
-
-      - name: Fetch latest remote changes 🔄
-        run: |
-          git fetch --prune --unshallow || true
-          git pull origin main || true
-
-      - name: Ensure branch is up to date with remote main 🆕
-        run: |
-          git fetch origin main
-          git reset --hard origin/main
 
       - name: Set up QEMU ⚡
         uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392

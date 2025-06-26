@@ -34,9 +34,7 @@ class Settings(BaseSettings):
 settings = Settings()  # type: ignore
 
 
-def downloadVideoWithYtDlpAsMp3(
-    video_url: str,
-) -> str:
+def downloadVideoWithYtDlpAsMp3(video_url: str) -> str:
     ydl_opts = {
         "format": "bestaudio/best",
         "postprocessors": [
