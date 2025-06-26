@@ -6,16 +6,21 @@ updates:
       interval: "daily"
     assignees:
       - "r4b2"
+    commit-message:
+      prefix: "chore"
     groups:
       python:
         patterns:
           - "*"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "daily"
     assignees:
       - "r4b2"
+    commit-message:
+      prefix: "chore"
     groups:
       actions:
         patterns:

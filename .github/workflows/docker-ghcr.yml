@@ -1,0 +1,93 @@
+name: 🐳 Build - Push - Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-push-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout code 🛎️
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+
+      - name: Fetch latest remote changes 🔄
+        run: |
+          git fetch --prune --unshallow || true
+          git pull origin main || true
+
+      - name: Ensure branch is up to date with remote main 🆕
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Set up QEMU ⚡
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
+
+      - name: Set up Docker Buildx 🛠️
+        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
+
+      - name: Set up Node.js 🟢
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 20
+
+      - name: Install semantic-release and plugins 📦
+        run: |
+          npm install -g semantic-release @semantic-release/changelog @semantic-release/git @semantic-release/github conventional-changelog-conventionalcommits semantic-release-export-data
+
+      - name: Get next version from semantic-release 🏷️
+        id: get_version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release --dry-run || true
+          VERSION=$(npx semantic-release --dry-run 2>&1 | grep -oP 'Skip v\K[0-9]+\.[0-9]+\.[0-9]+')
+          echo "Detected version: $VERSION"
+          if [ -z "$VERSION" ]; then
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Abort if not latest commit on main ❌
+        run: |
+          REMOTE_SHA=$(git ls-remote origin refs/heads/main | cut -f1)
+          echo "Current SHA: $GITHUB_SHA"
+          echo "Remote SHA:  $REMOTE_SHA"
+          if [ "$GITHUB_SHA" != "$REMOTE_SHA" ]; then
+            echo "This workflow is not running on the latest commit of main. Exiting early."
+            exit 0
+          fi
+
+      - name: Log in to GHCR 🔑
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Docker image 🐳
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -t ghcr.io/${{ github.repository }}:$VERSION \
+            -t ghcr.io/${{ github.repository }}:latest \
+            --push \
+            --cache-from=type=gha \
+            --cache-to=type=gha,mode=max .
+
+      - name: Run semantic-release 🚀
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          semantic-release
