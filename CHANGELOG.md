@@ -1,3 +1,9 @@
+## [1.0.1](https://github.com/yggdrion/firecast/compare/v1.0.0...v1.0.1) (2025-06-29)
+
+### Bug Fixes
+
+* chore patch release ([deb06ee](https://github.com/yggdrion/firecast/commit/deb06ee2e595b07fed23d06936aaf7024c910817))
+
 ## 1.0.0 (2025-06-27)
 
 ### Bug Fixes
