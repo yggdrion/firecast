@@ -5,11 +5,13 @@ from fastapi import (
     Request,
 )
 from pydantic_settings import BaseSettings
+from pydantic import ValidationError
 import os
 import yt_dlp
 import paramiko
 import time
 import logging
+import requests
 
 app = FastAPI()
 
@@ -27,13 +29,24 @@ class Settings(BaseSettings):
     SFTP_USER: str
     SFTP_PASSWORD: str
     AZURACAST_API_KEY: str
+    AZURACAST_API_URL: str  # Fixed typo here
 
     class Config:
         env_file = ".env"
         extra = "ignore"
 
 
-settings = Settings()  # type: ignore
+try:
+    settings = Settings()  # type: ignore
+except ValidationError as e:
+    missing = []
+    for err in e.errors():
+        if err["type"] == "missing":
+            missing.append(err["loc"][0])
+    if missing:
+        raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}") from None
+    else:
+        raise
 
 
 def downloadVideoWithYtDlpAsMp3(video_url: str) -> str:
@@ -79,6 +92,18 @@ def upload_to_sftp(local_file: str):
     transport.close()
     print(f"Uploaded {local_file}")
     os.remove(local_file)
+
+
+def add_song_to_azuracast_playlist(filename: str, playlist: str):
+    api_url = f"https://your-azuracast-instance/api/station/1/playlist/{playlist}/import"
+    headers = {
+        "X-API-Key": settings.AZURACAST_API_KEY,
+        "Content-Type": "application/json",
+    }
+    data = {"path": filename}
+    response = requests.post(api_url, headers=headers, json=data)
+    if not response.ok:
+        raise Exception(f"AzuraCast API error: {response.status_code} {response.text}")
 
 
 @app.middleware("http")
@@ -129,14 +154,21 @@ async def add_video(request: Request):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Missing 'video_url' in request body",
         )
+    playlist = body.get("playlist")
+    if not playlist:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing 'playlist' in request body",
+        )
 
     try:
         mp3_file = downloadVideoWithYtDlpAsMp3(video_url)
         upload_to_sftp(mp3_file)
+        add_song_to_azuracast_playlist(os.path.basename(mp3_file), playlist)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error downloading or uploading video: {str(e)}",
+            detail=f"Error downloading, uploading, or adding to playlist: {str(e)}",
         )
 
     return {"message": f"File '{mp3_file}' processed and uploaded successfully."}
