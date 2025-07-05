@@ -1,3 +1,9 @@
+## [1.0.3](https://github.com/yggdrion/firecast/compare/v1.0.2...v1.0.3) (2025-07-05)
+
+### Bug Fixes
+
+* add ruff linter ([#8](https://github.com/yggdrion/firecast/issues/8)) ([a2834c0](https://github.com/yggdrion/firecast/commit/a2834c08df5499eb0b39ce7961bd5563d2a94072))
+
 ## [1.0.2](https://github.com/yggdrion/firecast/compare/v1.0.1...v1.0.2) (2025-07-02)
 
 ## [1.0.1](https://github.com/yggdrion/firecast/compare/v1.0.0...v1.0.1) (2025-06-29)
