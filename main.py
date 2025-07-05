@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     SFTP_USER: str
     SFTP_PASSWORD: str
     AZURACAST_API_KEY: str
-    AZURACAST_API_URL: str  # Fixed typo here
+    AZURACAST_DOMAIN: str  # Fixed typo here
 
     class Config:
         env_file = ".env"
@@ -95,7 +95,9 @@ def upload_to_sftp(local_file: str):
 
 
 def add_song_to_azuracast_playlist(filename: str, playlist: str):
-    api_url = f"https://your-azuracast-instance/api/station/1/playlist/{playlist}/import"
+    #  AZURACAST_API_URL
+    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/playlist/{playlist}/import"
+
     headers = {
         "X-API-Key": settings.AZURACAST_API_KEY,
         "Content-Type": "application/json",
