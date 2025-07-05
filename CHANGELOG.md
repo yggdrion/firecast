@@ -1,3 +1,9 @@
+## [1.0.5](https://github.com/yggdrion/firecast/compare/v1.0.4...v1.0.5) (2025-07-05)
+
+### Bug Fixes
+
+* test release ([8bee0e3](https://github.com/yggdrion/firecast/commit/8bee0e3e0175f8dfbede94ca92fc3430e4ced117))
+
 ## [1.0.4](https://github.com/yggdrion/firecast/compare/v1.0.3...v1.0.4) (2025-07-05)
 
 ### Bug Fixes
