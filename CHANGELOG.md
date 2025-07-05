@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/yggdrion/firecast/compare/v1.0.3...v1.0.4) (2025-07-05)
+
+### Bug Fixes
+
+* concurrency ([f654cb3](https://github.com/yggdrion/firecast/commit/f654cb373ff5db2bbc0f49609e76b98d72fec4a7))
+* workflows ([7e01963](https://github.com/yggdrion/firecast/commit/7e01963dd29f3aa274ece7a6ac134bfe2adcc6bc))
+
 ## [1.0.3](https://github.com/yggdrion/firecast/compare/v1.0.2...v1.0.3) (2025-07-05)
 
 ### Bug Fixes
