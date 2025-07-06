@@ -138,8 +138,38 @@ def root():
     return {"status": "ok"}
 
 
-@app.get("/playlists")
+@app.get("/test")
 def test():
+    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/files"
+
+    # Noisestorm - Crab Rave [Monstercat Release].mp3
+
+    headers = {
+        "X-API-Key": settings.AZURACAST_API_KEY,
+        "Content-Type": "application/json",
+    }
+    response = requests.get(api_url, headers=headers)
+    if not response.ok:
+        raise Exception(f"AzuraCast API error: {response.status_code} {response.text}")
+
+    try:
+        data = response.json()
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to parse JSON response: {str(e)}",
+        )
+    if not isinstance(data, list):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected response format from AzuraCast API",
+        )
+
+    return data
+
+
+@app.get("/playlists")
+def playlists():
     api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/playlists"
 
     # Noisestorm - Crab Rave [Monstercat Release].mp3
@@ -204,7 +234,7 @@ async def add_video(request: Request):
     try:
         mp3_file = downloadVideoWithYtDlpAsMp3(video_url)
         upload_to_sftp(mp3_file)
-        add_song_to_azuracast_playlist(os.path.basename(mp3_file), playlist)
+        # add_song_to_azuracast_playlist(os.path.basename(mp3_file), playlist)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
