@@ -15,7 +15,7 @@ Content-Type: application/json
 
 {
     "video_url": "https://www.youtube.com/watch?v=LDU_Txk06tM",
-    "playlist": "test"
+    "playlist_id": "6"
 }
 
 ###
