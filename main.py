@@ -95,7 +95,6 @@ def upload_to_sftp(local_file: str):
 
 
 def add_song_to_azuracast_playlist(filename: str, playlist: str):
-    #  AZURACAST_API_URL
     api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/playlist/{playlist}/import"
 
     headers = {
@@ -139,6 +138,43 @@ def root():
     return {"status": "ok"}
 
 
+@app.get("/playlists")
+def test():
+    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/playlists"
+
+    # Noisestorm - Crab Rave [Monstercat Release].mp3
+
+    headers = {
+        "X-API-Key": settings.AZURACAST_API_KEY,
+        "Content-Type": "application/json",
+    }
+    response = requests.get(api_url, headers=headers)
+    if not response.ok:
+        raise Exception(f"AzuraCast API error: {response.status_code} {response.text}")
+
+    try:
+        data = response.json()
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to parse JSON response: {str(e)}",
+        )
+    if not isinstance(data, list):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected response format from AzuraCast API",
+        )
+
+    playlists = {playlist["name"]: playlist["id"] for playlist in data}
+    if not playlists:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No playlists found in AzuraCast",
+        )
+
+    return playlists
+
+
 @app.post("/addvideo")
 async def add_video(request: Request):
     api_key = request.headers.get("x-api-key")
@@ -162,6 +198,8 @@ async def add_video(request: Request):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Missing 'playlist' in request body",
         )
+
+    print(f"Received video URL: {video_url}, Playlist: {playlist}")
 
     try:
         mp3_file = downloadVideoWithYtDlpAsMp3(video_url)
