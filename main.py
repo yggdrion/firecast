@@ -66,6 +66,24 @@ def downloadVideoWithYtDlpAsMp3(video_url: str) -> str:
     return mp3_filename
 
 
+def assign_playlist_to_song(song_id: int, playlist_id: int):
+    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/playlist/{playlist_id}/assign"
+
+    headers = {
+        "X-API-Key": settings.AZURACAST_API_KEY,
+        "Content-Type": "application/json",
+    }
+
+    data = {"song_id": song_id}
+
+    response = requests.post(api_url, headers=headers, json=data)
+
+    if not response.ok:
+        raise Exception(f"AzuraCast API error: {response.status_code} {response.text}")
+
+    print(f"Assigned song ID {song_id} to playlist ID {playlist_id}")
+
+
 def upload_to_azuracast(local_file: str):
     api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/files"
 
@@ -81,25 +99,17 @@ def upload_to_azuracast(local_file: str):
 
     response = requests.post(api_url, headers=headers, json=data)
 
+    response_data = response.json()
+    song_id = response_data["id"]
+
+    # assign_playlist_to_song(song_id, 6)
+
     if not response.ok:
-        # os.remove(local_file)
+        os.remove(local_file)
         raise Exception(f"AzuraCast API upload error: {response.status_code} {response.text}")
 
     print(f"Uploaded {local_file} to AzuraCast")
     os.remove(local_file)
-
-
-def add_song_to_azuracast_playlist(filename: str, playlist: str):
-    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/playlist/{playlist}/import"
-
-    headers = {
-        "X-API-Key": settings.AZURACAST_API_KEY,
-        "Content-Type": "application/json",
-    }
-    data = {"path": filename}
-    response = requests.post(api_url, headers=headers, json=data)
-    if not response.ok:
-        raise Exception(f"AzuraCast API error: {response.status_code} {response.text}")
 
 
 @app.middleware("http")
