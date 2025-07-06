@@ -8,10 +8,10 @@ from pydantic_settings import BaseSettings
 from pydantic import ValidationError
 import os
 import yt_dlp
-import paramiko
 import time
 import logging
 import requests
+import base64
 
 app = FastAPI()
 
@@ -24,10 +24,6 @@ logging.basicConfig(
 
 class Settings(BaseSettings):
     FIRECAST_SECRET: str
-    SFTP_ADDRESS: str
-    SFTP_PORT: int
-    SFTP_USER: str
-    SFTP_PASSWORD: str
     AZURACAST_API_KEY: str
     AZURACAST_DOMAIN: str  # Fixed typo here
 
@@ -70,27 +66,26 @@ def downloadVideoWithYtDlpAsMp3(video_url: str) -> str:
     return mp3_filename
 
 
-def upload_to_sftp(local_file: str):
-    transport = paramiko.Transport(
-        (
-            settings.SFTP_ADDRESS,
-            settings.SFTP_PORT,
-        )
-    )
-    transport.connect(
-        username=settings.SFTP_USER,
-        password=settings.SFTP_PASSWORD,
-    )
-    sftp = paramiko.SFTPClient.from_transport(transport)
-    if sftp is None:
-        transport.close()
-        os.remove(local_file)
-        raise Exception("Failed to establish SFTP connection.")
-    remote_path = os.path.basename(local_file)
-    sftp.put(local_file, remote_path)
-    sftp.close()
-    transport.close()
-    print(f"Uploaded {local_file}")
+def upload_to_azuracast(local_file: str):
+    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/files"
+
+    headers = {
+        "X-API-Key": settings.AZURACAST_API_KEY,
+        "Content-Type": "application/json",
+    }
+
+    with open(local_file, "rb") as f:
+        file_content = base64.b64encode(f.read()).decode("utf-8")
+
+    data = {"path": os.path.basename(local_file), "file": file_content}
+
+    response = requests.post(api_url, headers=headers, json=data)
+
+    if not response.ok:
+        # os.remove(local_file)
+        raise Exception(f"AzuraCast API upload error: {response.status_code} {response.text}")
+
+    print(f"Uploaded {local_file} to AzuraCast")
     os.remove(local_file)
 
 
@@ -233,7 +228,7 @@ async def add_video(request: Request):
 
     try:
         mp3_file = downloadVideoWithYtDlpAsMp3(video_url)
-        upload_to_sftp(mp3_file)
+        upload_to_azuracast(mp3_file)
         # add_song_to_azuracast_playlist(os.path.basename(mp3_file), playlist)
     except Exception as e:
         raise HTTPException(
