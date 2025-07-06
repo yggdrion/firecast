@@ -1,3 +1,10 @@
+## [1.0.6](https://github.com/yggdrion/firecast/compare/v1.0.5...v1.0.6) (2025-07-06)
+
+### Bug Fixes
+
+* pr test build ([4663901](https://github.com/yggdrion/firecast/commit/466390156ce800efefca15dd8cce65fb2ab09f41))
+* remove qemu on test build ([e16aca0](https://github.com/yggdrion/firecast/commit/e16aca0b3bbe73d53333b95e7226c9220c67f04c))
+
 ## [1.0.5](https://github.com/yggdrion/firecast/compare/v1.0.4...v1.0.5) (2025-07-05)
 
 ### Bug Fixes
