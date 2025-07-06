@@ -67,21 +67,22 @@ def downloadVideoWithYtDlpAsMp3(video_url: str) -> str:
 
 
 def assign_playlist_to_song(song_id: int, playlist_id: int):
-    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/playlist/{playlist_id}/assign"
+    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/file/{song_id}"
 
     headers = {
         "X-API-Key": settings.AZURACAST_API_KEY,
         "Content-Type": "application/json",
     }
+    data = {
+        "playlists": [
+            {"id": playlist_id},
+            0,
+        ],
+    }
 
-    data = {"song_id": song_id}
+    response = requests.put(api_url, headers=headers, json=data)
 
-    response = requests.post(api_url, headers=headers, json=data)
-
-    if not response.ok:
-        raise Exception(f"AzuraCast API error: {response.status_code} {response.text}")
-
-    print(f"Assigned song ID {song_id} to playlist ID {playlist_id}")
+    return response.ok
 
 
 def upload_to_azuracast(local_file: str):
@@ -102,14 +103,14 @@ def upload_to_azuracast(local_file: str):
     response_data = response.json()
     song_id = response_data["id"]
 
-    # assign_playlist_to_song(song_id, 6)
-
     if not response.ok:
         os.remove(local_file)
         raise Exception(f"AzuraCast API upload error: {response.status_code} {response.text}")
 
-    print(f"Uploaded {local_file} to AzuraCast")
+    print(f"Uploaded {local_file} with song ID {song_id}")
     os.remove(local_file)
+
+    return song_id
 
 
 @app.middleware("http")
@@ -145,32 +146,7 @@ def root():
 
 @app.get("/test")
 def test():
-    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/files"
-
-    # Noisestorm - Crab Rave [Monstercat Release].mp3
-
-    headers = {
-        "X-API-Key": settings.AZURACAST_API_KEY,
-        "Content-Type": "application/json",
-    }
-    response = requests.get(api_url, headers=headers)
-    if not response.ok:
-        raise Exception(f"AzuraCast API error: {response.status_code} {response.text}")
-
-    try:
-        data = response.json()
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to parse JSON response: {str(e)}",
-        )
-    if not isinstance(data, list):
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Unexpected response format from AzuraCast API",
-        )
-
-    return data
+    return {"message": "Test endpoint is working!"}
 
 
 @app.get("/playlists")
@@ -238,8 +214,8 @@ async def add_video(request: Request):
 
     try:
         mp3_file = downloadVideoWithYtDlpAsMp3(video_url)
-        upload_to_azuracast(mp3_file)
-        # add_song_to_azuracast_playlist(os.path.basename(mp3_file), playlist)
+        song_id = upload_to_azuracast(mp3_file)
+        assign_playlist_to_song(song_id, playlist_id)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
