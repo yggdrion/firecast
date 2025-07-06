@@ -227,14 +227,14 @@ async def add_video(request: Request):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Missing 'video_url' in request body",
         )
-    playlist = body.get("playlist")
-    if not playlist:
+    playlist_id = body.get("playlist_id")
+    if not playlist_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Missing 'playlist' in request body",
         )
 
-    print(f"Received video URL: {video_url}, Playlist: {playlist}")
+    print(f"Received video URL: {video_url}, Playlist: {playlist_id}")
 
     try:
         mp3_file = downloadVideoWithYtDlpAsMp3(video_url)
