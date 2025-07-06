@@ -6,15 +6,26 @@ from fastapi import (
 )
 from pydantic_settings import BaseSettings
 from pydantic import ValidationError
+from contextlib import asynccontextmanager
 import os
 import yt_dlp
 import time
 import logging
 import requests
 import base64
-from typing import Dict, Any
+from typing import Dict, Any, AsyncGenerator
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # Startup
+    logging.info("Application startup complete - FastAPI is ready")
+    yield
+    # Shutdown (if needed)
+    logging.info("Application shutdown")
+
+
+app = FastAPI(lifespan=lifespan)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,10 +54,19 @@ def get_settings() -> Settings:
         raise
 
 
-settings = get_settings()
+# Initialize settings with proper error handling
+try:
+    settings = get_settings()
+    logging.info("Settings loaded successfully")
+except Exception as e:
+    logging.error(f"Failed to load settings: {e}")
+    raise
 
 
 def download_video_as_mp3(video_url: str) -> str:
+    # Ensure downloads directory exists
+    os.makedirs("downloads", exist_ok=True)
+
     ydl_opts = {
         "format": "bestaudio/best",
         "postprocessors": [
@@ -56,7 +76,7 @@ def download_video_as_mp3(video_url: str) -> str:
                 "preferredquality": "192",
             }
         ],
-        "outtmpl": "%(title)s.%(ext)s",
+        "outtmpl": "downloads/%(title)s.%(ext)s",
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(video_url, download=False)
