@@ -5,13 +5,27 @@ from fastapi import (
     Request,
 )
 from pydantic_settings import BaseSettings
+from pydantic import ValidationError
+from contextlib import asynccontextmanager
 import os
 import yt_dlp
-import paramiko
 import time
 import logging
+import requests
+import base64
+from typing import Dict, Any, AsyncGenerator
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    # Startup
+    logging.info("Application startup complete - FastAPI is ready")
+    yield
+    # Shutdown (if needed)
+    logging.info("Application shutdown")
+
+
+app = FastAPI(lifespan=lifespan)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,19 +36,37 @@ logging.basicConfig(
 
 class Settings(BaseSettings):
     FIRECAST_SECRET: str
-    SFTP_ADDRESS: str
-    SFTP_PORT: int
-    SFTP_USER: str
-    SFTP_PASSWORD: str
+    AZURACAST_API_KEY: str
+    AZURACAST_DOMAIN: str
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 
-settings = Settings()  # type: ignore
+def get_settings() -> Settings:
+    try:
+        return Settings()  # type: ignore
+    except ValidationError as e:
+        missing = [str(err["loc"][0]) for err in e.errors() if err["type"] == "missing"]
+        if missing:
+            raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}") from None
+        raise
 
 
-def downloadVideoWithYtDlpAsMp3(video_url: str) -> str:
+# Initialize settings with proper error handling
+try:
+    settings = get_settings()
+    logging.info("Settings loaded successfully")
+except Exception as e:
+    logging.error(f"Failed to load settings: {e}")
+    raise
+
+
+def download_video_as_mp3(video_url: str) -> str:
+    # Ensure downloads directory exists
+    os.makedirs("downloads", exist_ok=True)
+
     ydl_opts = {
         "format": "bestaudio/best",
         "postprocessors": [
@@ -44,9 +76,8 @@ def downloadVideoWithYtDlpAsMp3(video_url: str) -> str:
                 "preferredquality": "192",
             }
         ],
-        "outtmpl": "%(title)s.%(ext)s",
+        "outtmpl": "downloads/%(title)s.%(ext)s",
     }
-
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(video_url, download=False)
         filename = ydl.prepare_filename(info)
@@ -55,49 +86,55 @@ def downloadVideoWithYtDlpAsMp3(video_url: str) -> str:
     return mp3_filename
 
 
-def upload_to_sftp(local_file: str):
-    transport = paramiko.Transport(
-        (
-            settings.SFTP_ADDRESS,
-            settings.SFTP_PORT,
-        )
-    )
-    transport.connect(
-        username=settings.SFTP_USER,
-        password=settings.SFTP_PASSWORD,
-    )
-    sftp = paramiko.SFTPClient.from_transport(transport)
-    if sftp is None:
-        transport.close()
+def assign_playlist_to_song(song_id: int, playlist_id: int) -> bool:
+    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/file/{song_id}"
+    headers = {
+        "X-API-Key": settings.AZURACAST_API_KEY,
+        "Content-Type": "application/json",
+    }
+    data = {"playlists": [{"id": playlist_id}, 0]}
+    response = requests.put(api_url, headers=headers, json=data)
+    return response.ok
+
+
+def upload_to_azuracast(local_file: str) -> int:
+    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/files"
+    headers = {
+        "X-API-Key": settings.AZURACAST_API_KEY,
+        "Content-Type": "application/json",
+    }
+    with open(local_file, "rb") as f:
+        file_content = base64.b64encode(f.read()).decode("utf-8")
+    data = {"path": os.path.basename(local_file), "file": file_content}
+    response = requests.post(api_url, headers=headers, json=data)
+    if not response.ok:
         os.remove(local_file)
-        raise Exception("Failed to establish SFTP connection.")
-    remote_path = os.path.basename(local_file)
-    sftp.put(local_file, remote_path)
-    sftp.close()
-    transport.close()
-    print(f"Uploaded {local_file}")
+        raise Exception(f"AzuraCast API upload error: {response.status_code} {response.text}")
+    song_id = response.json().get("id")
+    print(f"Uploaded {local_file} with song ID {song_id}")
     os.remove(local_file)
+    return song_id
 
 
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = getattr(request.client, "host", "unknown")
     method = request.method
     path = request.url.path
     response = await call_next(request)
     status_code = response.status_code
     process_time = (time.time() - start_time) * 1000  # ms
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(start_time))
-    # Color by status code
-    if 200 <= status_code < 300:
-        color = "\033[92m"  # Green
-    elif 300 <= status_code < 400:
-        color = "\033[94m"  # Blue
-    elif 400 <= status_code < 500:
-        color = "\033[93m"  # Yellow
-    else:
-        color = "\033[91m"  # Red
+    color = (
+        "\033[92m"
+        if 200 <= status_code < 300
+        else "\033[94m"
+        if 300 <= status_code < 400
+        else "\033[93m"
+        if 400 <= status_code < 500
+        else "\033[91m"
+    )
     reset = "\033[0m"
     log_msg = f"{timestamp} {client_ip} {method} {path} {color}{status_code}{reset} {process_time:.2f}ms"
     logging.info(log_msg)
@@ -110,6 +147,45 @@ def root():
     return {"status": "ok"}
 
 
+@app.get("/test")
+def test():
+    return {"message": "Test endpoint is working!"}
+
+
+@app.get("/playlists")
+def playlists() -> Dict[str, Any]:
+    api_url = f"https://{settings.AZURACAST_DOMAIN}/api/station/1/playlists"
+    headers = {
+        "X-API-Key": settings.AZURACAST_API_KEY,
+        "Content-Type": "application/json",
+    }
+    response = requests.get(api_url, headers=headers)
+    if not response.ok:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"AzuraCast API error: {response.status_code} {response.text}",
+        )
+    try:
+        data = response.json()
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to parse JSON response: {str(e)}",
+        )
+    if not isinstance(data, list):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected response format from AzuraCast API",
+        )
+    playlists = {playlist["name"]: playlist["id"] for playlist in data}
+    if not playlists:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No playlists found in AzuraCast",
+        )
+    return playlists
+
+
 @app.post("/addvideo")
 async def add_video(request: Request):
     api_key = request.headers.get("x-api-key")
@@ -118,23 +194,27 @@ async def add_video(request: Request):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API key",
         )
-
     body = await request.json()
-
     video_url = body.get("video_url")
     if not video_url:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Missing 'video_url' in request body",
         )
-
+    playlist_id = body.get("playlist_id")
+    if not playlist_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing 'playlist' in request body",
+        )
+    print(f"Received video URL: {video_url}, Playlist: {playlist_id}")
     try:
-        mp3_file = downloadVideoWithYtDlpAsMp3(video_url)
-        upload_to_sftp(mp3_file)
+        mp3_file = download_video_as_mp3(video_url)
+        song_id = upload_to_azuracast(mp3_file)
+        assign_playlist_to_song(song_id, playlist_id)
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error downloading or uploading video: {str(e)}",
+            detail=f"Error downloading, uploading, or adding to playlist: {str(e)}",
         )
-
     return {"message": f"File '{mp3_file}' processed and uploaded successfully."}
