@@ -1,3 +1,9 @@
+## [1.0.7](https://github.com/yggdrion/firecast/compare/v1.0.6...v1.0.7) (2025-07-07)
+
+### Bug Fixes
+
+* pr-test-build concurrency ([#12](https://github.com/yggdrion/firecast/issues/12)) ([7573319](https://github.com/yggdrion/firecast/commit/7573319779cca0fdcc1d9d505fbbad50e2364657))
+
 ## [1.0.6](https://github.com/yggdrion/firecast/compare/v1.0.5...v1.0.6) (2025-07-06)
 
 ### Bug Fixes
