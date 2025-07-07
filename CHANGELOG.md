@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/yggdrion/firecast/compare/v1.0.7...v1.1.0) (2025-07-07)
+
+### Features
+
+* azuracast api ([#9](https://github.com/yggdrion/firecast/issues/9)) ([11a08c4](https://github.com/yggdrion/firecast/commit/11a08c4f20a0e210e0ef5eec4b08e4b2682ed422))
+
 ## [1.0.7](https://github.com/yggdrion/firecast/compare/v1.0.6...v1.0.7) (2025-07-07)
 
 ### Bug Fixes
