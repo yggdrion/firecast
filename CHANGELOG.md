@@ -1,3 +1,9 @@
+## [1.1.2](https://github.com/yggdrion/firecast/compare/v1.1.1...v1.1.2) (2025-07-08)
+
+### Bug Fixes
+
+* client env ([1abf20d](https://github.com/yggdrion/firecast/commit/1abf20d930bfcf7ed0cc2c20c5b84bd1da6a2ae2))
+
 ## [1.1.1](https://github.com/yggdrion/firecast/compare/v1.1.0...v1.1.1) (2025-07-08)
 
 ## [1.1.0](https://github.com/yggdrion/firecast/compare/v1.0.7...v1.1.0) (2025-07-07)
