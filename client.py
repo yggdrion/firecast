@@ -17,14 +17,18 @@ def load_env():
 
 load_env()
 
-API_KEY = os.getenv("FIRECAST_SECRET", "supersecret")
+API_KEY = os.getenv("FIRECAST_SECRET")
+AZURACAST_DOMAIN = os.getenv("AZURACAST_DOMAIN")
+
+if not API_KEY or not AZURACAST_DOMAIN:
+    raise ValueError("FIRECAST_SECRET and AZURACAST_DOMAIN must be set in the .env file")
 
 headers = {"X-API-KEY": API_KEY, "Content-Type": "application/json"}
 
 
 def make_request(method, endpoint, data=None):
     """Make a simple HTTP request"""
-    url = f"http://localhost:8000{endpoint}"
+    url = f"http://{AZURACAST_DOMAIN}:8888{endpoint}"
     try:
         response = None
         if method == "GET":
@@ -42,7 +46,6 @@ def make_request(method, endpoint, data=None):
         return None
 
 
-
 # Health check
 make_request("GET", "/healthz")
 
@@ -53,15 +56,9 @@ make_request("GET", "/test")
 make_request("GET", "/playlists")
 
 # Add video (comment out if not needed)
-# video_data = {
-#     "video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-#     "playlist_id": "6"
-# }
+# video_data = {"video_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "playlist_id": "6"}
 # make_request("POST", "/addvideo", video_data)
 
 # Add another video example
-# video_data = {
-#     "video_url": "https://www.youtube.com/watch?v=LDU_Txk06tM",
-#     "playlist_id": "6"
-# }
+# video_data = {"video_url": "https://www.youtube.com/watch?v=LDU_Txk06tM", "playlist_id": "6"}
 # make_request("POST", "/addvideo", video_data)
