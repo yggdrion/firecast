@@ -38,7 +38,33 @@ func addVideoHandler(w http.ResponseWriter, r *http.Request) {
 		Message: fmt.Sprintf("Video request received for URL: %s, Playlist: %s", videoReq.VideoURL, videoReq.PlaylistID),
 		Success: true,
 	}
+
+	if err := storeVideoRequestInFile(videoReq); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		response.Message = fmt.Sprintf("Error storing video request: %s", err)
+		response.Success = false
+	}
+
 	json.NewEncoder(w).Encode(response)
+}
+
+func storeVideoRequestInFile(videoReq structs.VideoRequest) error {
+	file, err := os.OpenFile("video_requests.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("error opening file: %w", err)
+	}
+	defer file.Close()
+	jsonData, err := json.Marshal(videoReq)
+	if err != nil {
+		return fmt.Errorf("error marshalling JSON: %w", err)
+	}
+	if _, err := file.Write(jsonData); err != nil {
+		return fmt.Errorf("error writing to file: %w", err)
+	}
+	if _, err := file.WriteString("\n"); err != nil {
+		return fmt.Errorf("error writing newline to file: %w", err)
+	}
+	return nil
 }
 
 func main() {

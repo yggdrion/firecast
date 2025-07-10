@@ -10,7 +10,20 @@ import (
 )
 
 func main() {
-	fmt.Println("This is the client main function")
+
+	healthReq, err := http.Get("http://localhost:8080/health")
+	if err != nil {
+		fmt.Println("Error creating health check request:", err)
+		return
+	}
+	if healthReq.StatusCode != http.StatusOK {
+		fmt.Printf("Health check failed with status code: %d\n", healthReq.StatusCode)
+		return
+	}
+	fmt.Println("Health check successful, server is running.")
+	fmt.Println("Sending video request...")
+
+	defer healthReq.Body.Close()
 
 	videoReq := structs.VideoRequest{
 		VideoURL:   "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
