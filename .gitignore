@@ -200,3 +200,4 @@ cython_debug/
 *.exe
 tmp/
 video_requests.json
+valkey-data/
