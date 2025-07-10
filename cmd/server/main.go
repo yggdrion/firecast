@@ -4,16 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 
 	"firecast/pkg/structs"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 )
-
-func usersHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Users endpoint")
-}
 
 func healthHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
@@ -44,11 +42,28 @@ func addVideoHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file")
+	}
+
+	fireCastSecret := os.Getenv("FIRECAST_SECRET")
+	azuraCastApiKey := os.Getenv("AZURACAST_API_KEY")
+	azuraCastDomain := os.Getenv("AZURACAST_DOMAIN")
+
+	if fireCastSecret == "" || azuraCastApiKey == "" || azuraCastDomain == "" {
+		fmt.Println("Environment variables FIRECAST_SECRET, AZURACAST_API_KEY, and AZURACAST_DOMAIN must be set")
+		return
+	}
+
 	r := chi.NewRouter()
 
+	r.Use(middleware.RequestID)
+	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
 
-	r.Get("/users", usersHandler)
 	r.Get("/health", healthHandler)
 	r.Post("/addvideo", addVideoHandler)
 
