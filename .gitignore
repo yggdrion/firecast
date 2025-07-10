@@ -197,3 +197,5 @@ cython_debug/
 *.webm
 *.mp4
 
+*.exe
+tmp/

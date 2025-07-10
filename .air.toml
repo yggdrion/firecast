@@ -1,0 +1,5 @@
+[build]
+cmd = "go build -o .\\tmp\\main.exe .\\cmd\\server\\" # Build command for Windows
+bin = ".\\tmp\\main.exe"                          # Path to the temporary binary
+include_ext = ["go", "tmpl", "html"]              # File extensions to watch
+exclude_dir = ["vendor", "tmp"]                   # Directories to exclude

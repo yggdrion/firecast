@@ -1,16 +1,37 @@
-FROM python:3.13-slim
+# Multi-stage build
+FROM golang:1.24-alpine AS builder
 
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    rm -rf /var/lib/apt/lists/*
+# Install dependencies
+RUN apk add --no-cache git
 
 WORKDIR /app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy go mod files
+COPY go.mod go.sum ./
+RUN go mod download
 
-# Copy all necessary files and directories
-COPY main.py .
+# Copy source code
+COPY cmd/ ./cmd/
+
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server cmd/server/main.go
+
+# Final stage
+FROM alpine:latest
+
+# Install runtime dependencies
+RUN apk add --no-cache ffmpeg ca-certificates
+
+WORKDIR /root/
+
+# Copy the binary from builder stage
+COPY --from=builder /app/server .
+
+# Create downloads directory
 RUN mkdir -p downloads
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log", "--no-server-header"]
+# Expose port
+EXPOSE 8080
+
+# Run the binary
+CMD ["./server"]
