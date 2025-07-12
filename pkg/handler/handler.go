@@ -68,14 +68,13 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]any{
 		"status":  true,
-		"message": fmt.Sprintf("Video request received for URL: %s, Playlist: %s", videoReq.VideoURL, videoReq.PlaylistID),
+		"message": fmt.Sprintf("Video request received for URL: %s, Playlist: %s", videoReq.VideoUrl, videoReq.PlaylistId),
 	})
 }
 
 func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	// pop one video request from the Redis list
 	videoData, err := h.rdb.RPop(ctx, "video_requests").Bytes()
 	if err != nil {
 		if err.Error() == "redis: nil" {
@@ -98,7 +97,7 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	response := structs.VideoResponse{
 		Message: fmt.Sprintf("Video request popped: URL=%s, PlaylistID=%s",
-			videoReq.VideoURL, videoReq.PlaylistID),
+			videoReq.VideoUrl, videoReq.PlaylistId),
 		Success: true,
 	}
 	json.NewEncoder(w).Encode(response)

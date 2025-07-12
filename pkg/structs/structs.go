@@ -1,8 +1,8 @@
 package structs
 
 type VideoRequest struct {
-	VideoURL   string `json:"video_url"`
-	PlaylistID string `json:"playlist_id"`
+	VideoUrl   string `json:"videoUrl"`
+	PlaylistId string `json:"playlistId"`
 }
 
 type VideoResponse struct {

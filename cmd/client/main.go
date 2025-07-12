@@ -28,8 +28,8 @@ func healthCheck() {
 func addVideo() {
 	fmt.Println("Sending video request...")
 	videoReq := structs.VideoRequest{
-		VideoURL:   "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-		PlaylistID: "6",
+		VideoUrl:   "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+		PlaylistId: "6",
 	}
 
 	jsonData, err := json.Marshal(videoReq)
