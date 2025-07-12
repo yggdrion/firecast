@@ -39,43 +39,37 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 	var videoReq structs.VideoRequest
 	if err := json.NewDecoder(r.Body).Decode(&videoReq); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		response := structs.VideoResponse{
-			Message: "Invalid JSON format",
-			Success: false,
-		}
-		json.NewEncoder(w).Encode(response)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Invalid JSON format",
+		})
 		return
 	}
-
-	fmt.Printf("Received video request: URL=%s, PlaylistID=%s\n", videoReq.VideoURL, videoReq.PlaylistID)
 
 	jsonData, err := json.Marshal(videoReq)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		response := structs.VideoResponse{
-			Message: "Failed to encode video request",
-			Success: false,
-		}
-		json.NewEncoder(w).Encode(response)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to encode video request",
+		})
 		return
 	}
 
 	if err := h.rdb.LPush(ctx, "video_requests", jsonData).Err(); err != nil {
 		log.Printf("Failed to push video request to Redis: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		response := structs.VideoResponse{
-			Message: "Failed to store video request",
-			Success: false,
-		}
-		json.NewEncoder(w).Encode(response)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to store video request",
+		})
 		return
 	}
 
-	response := structs.VideoResponse{
-		Message: fmt.Sprintf("Video request received for URL: %s, Playlist: %s", videoReq.VideoURL, videoReq.PlaylistID),
-		Success: true,
-	}
-	json.NewEncoder(w).Encode(response)
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":  true,
+		"message": fmt.Sprintf("Video request received for URL: %s, Playlist: %s", videoReq.VideoURL, videoReq.PlaylistID),
+	})
 }
 
 func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
