@@ -87,6 +87,8 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("Popped video request:", string(videoData))
+
 	var videoReq structs.VideoRequest
 	if err := json.Unmarshal(videoData, &videoReq); err != nil {
 		log.Printf("Failed to decode video request: %v", err)

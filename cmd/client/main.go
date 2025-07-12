@@ -66,20 +66,16 @@ func getVideo() {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("Error: received status code %d\n", resp.StatusCode)
+	fmt.Println("Response Status Code:", resp.StatusCode)
+	fmt.Println("Response Headers:", resp.Header)
+
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
 		return
 	}
-
-	var videoResp structs.VideoResponse
-	if err := json.NewDecoder(resp.Body).Decode(&videoResp); err != nil {
-		fmt.Println("Error parsing response JSON:", err)
-		return
-	}
-
-	fmt.Printf("Success: %t\n", videoResp.Success)
-	fmt.Printf("Message: %s\n", videoResp.Message)
-	fmt.Println("Video retrieved successfully!")
+	fmt.Println("Response Body:", string(body))
 }
 
 func main() {
