@@ -35,9 +35,9 @@ func StartWipRecovery(ctx context.Context, rdb *redis.Client) {
 				retries, _ := strconv.Atoi(videoMeta["retries"])
 
 				if retries >= 3 {
-					_, err := rdb.SAdd(ctx, "videos:failed", videoUuid).Result()
+					_, err := rdb.SAdd(ctx, "videos:fail", videoUuid).Result()
 					if err != nil {
-						log.Printf("Error moving %s to failed set: %v", videoUuid, err)
+						log.Printf("Error moving %s to fail set: %v", videoUuid, err)
 					}
 				} else {
 					_, err := rdb.LPush(ctx, "videos:queue", videoUuid).Result()
