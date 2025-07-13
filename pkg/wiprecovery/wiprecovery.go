@@ -4,23 +4,65 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 )
 
 func WipRecovery(ctx context.Context, rdb *redis.Client) {
+
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env file")
+	}
+
+	// Parse environment variables with defaults
+	wipTimeoutStr := os.Getenv("WIP_TIMEOUT")
+	if wipTimeoutStr == "" {
+		wipTimeoutStr = "300" // 5 minutes default
+	}
+	wipTimeout, err := strconv.Atoi(wipTimeoutStr)
+	if err != nil {
+		log.Printf("Invalid WIP_TIMEOUT value: %s, using default 300", wipTimeoutStr)
+		wipTimeout = 300
+	}
+
+	wipRetryStr := os.Getenv("WIP_RETRY")
+	if wipRetryStr == "" {
+		wipRetryStr = "3" // 3 retries default
+	}
+	maxRetries, err := strconv.Atoi(wipRetryStr)
+	if err != nil {
+		log.Printf("Invalid WIP_RETRY value: %s, using default 3", wipRetryStr)
+		maxRetries = 3
+	}
+
+	wipFrequencyStr := os.Getenv("WIP_INTERVAL")
+	if wipFrequencyStr == "" {
+		wipFrequencyStr = "10" // 10 seconds default
+	}
+	wipFrequency, err := strconv.Atoi(wipFrequencyStr)
+	if err != nil {
+		log.Printf("Invalid WIP_INTERVAL value: %s, using default 10", wipFrequencyStr)
+		wipFrequency = 10
+	}
+
 	go func() {
 		for {
 			now := float64(time.Now().Unix())
+			// Calculate the timeout threshold
+			timeoutThreshold := now - float64(wipTimeout)
+
 			wipVideos, err := rdb.ZRangeByScoreWithScores(ctx, "videos:wip", &redis.ZRangeBy{
 				Min: "-inf",
-				Max: fmt.Sprintf("%f", now),
+				Max: fmt.Sprintf("%f", timeoutThreshold),
 			}).Result()
 			if err != nil {
 				log.Printf("Error scanning videos:wip: %v", err)
-				time.Sleep(10 * time.Second)
+				time.Sleep(time.Duration(wipFrequency) * time.Second)
 				continue
 			}
 
@@ -34,7 +76,7 @@ func WipRecovery(ctx context.Context, rdb *redis.Client) {
 				}
 				retries, _ := strconv.Atoi(videoMeta["retries"])
 
-				if retries >= 3 {
+				if retries >= maxRetries {
 					_, err := rdb.SAdd(ctx, "videos:fail", videoUuid).Result()
 					if err != nil {
 						log.Printf("Error moving %s to fail set: %v", videoUuid, err)
@@ -52,7 +94,7 @@ func WipRecovery(ctx context.Context, rdb *redis.Client) {
 				}
 			}
 
-			time.Sleep(10 * time.Second)
+			time.Sleep(time.Duration(wipFrequency) * time.Second)
 		}
 	}()
 }
