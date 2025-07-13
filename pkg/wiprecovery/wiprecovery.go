@@ -53,7 +53,6 @@ func WipRecovery(ctx context.Context, rdb *redis.Client) {
 	go func() {
 		for {
 			now := float64(time.Now().Unix())
-			// Calculate the timeout threshold
 			timeoutThreshold := now - float64(wipTimeout)
 
 			wipVideos, err := rdb.ZRangeByScoreWithScores(ctx, "videos:wip", &redis.ZRangeBy{
@@ -76,6 +75,12 @@ func WipRecovery(ctx context.Context, rdb *redis.Client) {
 				}
 				retries, _ := strconv.Atoi(videoMeta["retries"])
 
+				_, err = rdb.ZRem(ctx, "videos:wip", videoUuid).Result()
+				if err != nil {
+					log.Printf("Error removing %s from wip: %v", videoUuid, err)
+					continue
+				}
+
 				if retries >= maxRetries {
 					_, err := rdb.SAdd(ctx, "videos:fail", videoUuid).Result()
 					if err != nil {
@@ -87,10 +92,6 @@ func WipRecovery(ctx context.Context, rdb *redis.Client) {
 						log.Printf("Error moving %s back to queue: %v", videoUuid, err)
 					}
 					rdb.HSet(ctx, metaKey, "last_attempt_at", time.Now().Unix())
-				}
-				_, err = rdb.ZRem(ctx, "videos:wip", videoUuid).Result()
-				if err != nil {
-					log.Printf("Error removing %s from wip: %v", videoUuid, err)
 				}
 			}
 

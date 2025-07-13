@@ -28,7 +28,7 @@ func printResponse(resp *http.Response) {
 	fmt.Println("Response Body:", string(body))
 }
 
-func healthCheck() *http.Response {
+func health() *http.Response {
 	resp, err := http.Get("http://localhost:8080/healthz")
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
@@ -37,7 +37,7 @@ func healthCheck() *http.Response {
 	return resp
 }
 
-func addVideo() *http.Response {
+func add() *http.Response {
 	fmt.Println("Sending video request...")
 	videoReq := structs.VideoAddRequest{
 		VideoUrl:   "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -58,7 +58,7 @@ func addVideo() *http.Response {
 	return resp
 }
 
-func getVideo() *http.Response {
+func get() *http.Response {
 	fmt.Println("Retrieving video...")
 	resp, err := http.Get("http://localhost:8080/video/get")
 	if err != nil {
@@ -68,11 +68,11 @@ func getVideo() *http.Response {
 	return resp
 }
 
-func doneVideo() *http.Response {
+func done() *http.Response {
 
 	var videoUuid structs.VideoDoneRequest
 
-	videoUuid.Uuid = os.Args[2] // Assuming the UUID is passed as a command line argument
+	videoUuid.Uuid = os.Args[2]
 
 	jsonData, err := json.Marshal(videoUuid)
 	if err != nil {
@@ -89,7 +89,7 @@ func doneVideo() *http.Response {
 	return resp
 }
 
-func failVideo() *http.Response {
+func fail() *http.Response {
 
 	var videoUuid structs.VideoDoneRequest
 
@@ -120,13 +120,25 @@ func status() *http.Response {
 	return resp
 }
 
+func help() {
+	fmt.Println("Usage: go run main.go <command>")
+	fmt.Println("Commands:")
+	fmt.Println("  health - Check the health of the service")
+	fmt.Println("  add - Add a video")
+	fmt.Println("  get - Get a video")
+	fmt.Println("  done <video_uuid> - Mark a video as done")
+	fmt.Println("  fail <video_uuid> - Mark a video as failed")
+	fmt.Println("  status - Get the status of the service")
+}
+
 func main() {
 	if len(os.Args) <= 1 {
-		fmt.Println("Usage: go run main.go <command>")
-		fmt.Println("Commands: health, addvideo, getvideo, donevideo, failvideo")
+
+		help()
 
 		if len(os.Args) <= 2 {
-			fmt.Println("donevideo, and failvideo, provide a video UUID as the second argument.")
+			help()
+			return
 		}
 
 		return
@@ -137,20 +149,19 @@ func main() {
 
 	switch command {
 	case "health":
-		resp = healthCheck()
-	case "addvideo":
-		resp = addVideo()
-	case "getvideo":
-		resp = getVideo()
-	case "donevideo":
-		resp = doneVideo()
-	case "failvideo":
-		resp = failVideo()
+		resp = health()
+	case "add":
+		resp = add()
+	case "get":
+		resp = get()
+	case "done":
+		resp = done()
+	case "fail":
+		resp = fail()
 	case "status":
 		resp = status()
 	default:
-		fmt.Println("Unknown command:", command)
-		fmt.Println("Available commands: health, addvideo, getvideo")
+		help()
 		return
 	}
 

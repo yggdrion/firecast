@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/lithammer/shortuuid/v4"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -66,7 +66,7 @@ func (h *Handler) VideoAddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videoUuid := uuid.New().String()
+	videoUuid := shortuuid.New()
 
 	if err := h.rdb.LPush(ctx, "videos:queue", videoUuid).Err(); err != nil {
 		log.Printf("Failed to push video request to Redis: %v", err)
@@ -178,7 +178,7 @@ func (h *Handler) VideoGetHandler(w http.ResponseWriter, r *http.Request) {
 		Uuid:          videoUuid,
 		VideoUrl:      videoData["url"],
 		PlaylistId:    playlistId,
-		Retries:       retries + 1, // incremented above
+		Retries:       retries + 1,
 		AddedAt:       addedAt,
 		LastAttemptAt: lastAttemptAt,
 	}
@@ -205,6 +205,44 @@ func (h *Handler) VideoFailHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{
 			"status":  false,
 			"message": "UUID is required",
+		})
+		return
+	}
+
+	isFailed, err := h.rdb.SIsMember(ctx, "videos:fail", videoUuid).Result()
+	if err != nil {
+		log.Printf("Failed to check fail set: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to check fail set",
+		})
+		return
+	}
+	if isFailed {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Already marked as failed",
+		})
+		return
+	}
+
+	isDone, err := h.rdb.SIsMember(ctx, "videos:done", videoUuid).Result()
+	if err != nil {
+		log.Printf("Failed to check done set: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to check done set",
+		})
+		return
+	}
+	if isDone {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Already marked as done",
 		})
 		return
 	}
@@ -275,6 +313,26 @@ func (h *Handler) VideoDoneHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{
 			"status":  false,
 			"message": "Already marked as done",
+		})
+		return
+	}
+
+	// Check if video is already marked as failed
+	isFailed, err := h.rdb.SIsMember(ctx, "videos:fail", videoUuid).Result()
+	if err != nil {
+		log.Printf("Failed to check fail set: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to check fail set",
+		})
+		return
+	}
+	if isFailed {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Already marked as failed",
 		})
 		return
 	}
