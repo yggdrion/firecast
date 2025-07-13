@@ -14,11 +14,49 @@ import (
 )
 
 type Handler struct {
-	rdb *redis.Client
+	rdb            *redis.Client
+	fireCastSecret string
 }
 
-func NewHandler(rdb *redis.Client) *Handler {
-	return &Handler{rdb: rdb}
+func NewHandler(rdb *redis.Client, fireCastSecret string) *Handler {
+	return &Handler{
+		rdb:            rdb,
+		fireCastSecret: fireCastSecret,
+	}
+}
+
+// AuthMiddleware checks for the FIRECAST_SECRET in the Authorization header
+func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		authHeader := r.Header.Get("Authorization")
+		if authHeader == "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": false,
+				"message": "Authorization required",
+			})
+			return
+		}
+
+		// Expected format: "Bearer <secret>" or just "<secret>"
+		token := authHeader
+		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			token = authHeader[7:]
+		}
+
+		if token != h.fireCastSecret {
+			w.WriteHeader(http.StatusUnauthorized)
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": false,
+				"message": "Invalid secret",
+			})
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func (h *Handler) HealthzHandler(w http.ResponseWriter, r *http.Request) {

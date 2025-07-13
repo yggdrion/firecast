@@ -45,7 +45,7 @@ func main() {
 		log.Fatalf("Redis connection failed: %v", err)
 	}
 
-	h := handler.NewHandler(rdb)
+	h := handler.NewHandler(rdb, fireCastSecret)
 
 	r := chi.NewRouter()
 
@@ -54,12 +54,19 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	// Public routes (no authentication required)
+	r.Get("/health", h.HealthzHandler)
 	r.Get("/healthz", h.HealthzHandler)
-	r.Post("/video/add", h.VideoAddHandler)
-	r.Get("/video/get", h.VideoGetHandler)
-	r.Post("/video/done", h.VideoDoneHandler)
-	r.Post("/video/fail", h.VideoFailHandler)
-	r.Get("/status", h.StatusHandler)
+
+	// Protected routes (authentication required)
+	r.Group(func(r chi.Router) {
+		r.Use(h.AuthMiddleware)
+		r.Post("/video/add", h.VideoAddHandler)
+		r.Get("/video/get", h.VideoGetHandler)
+		r.Post("/video/done", h.VideoDoneHandler)
+		r.Post("/video/fail", h.VideoFailHandler)
+		r.Get("/status", h.StatusHandler)
+	})
 
 	wiprecovery.WipRecovery(ctx, rdb)
 

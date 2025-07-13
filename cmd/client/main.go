@@ -8,7 +8,42 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
 )
+
+var fireCastSecret string
+
+func init() {
+	// Load .env file if it exists
+	godotenv.Load()
+	fireCastSecret = os.Getenv("FIRECAST_SECRET")
+}
+
+func createAuthenticatedRequest(method, url string, body *bytes.Buffer) (*http.Request, error) {
+	var req *http.Request
+	var err error
+
+	if body != nil {
+		req, err = http.NewRequest(method, url, body)
+	} else {
+		req, err = http.NewRequest(method, url, nil)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if method == "POST" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	if fireCastSecret != "" {
+		req.Header.Set("Authorization", "Bearer "+fireCastSecret)
+	}
+
+	return req, nil
+}
 
 func printResponse(resp *http.Response) {
 	if resp == nil {
@@ -50,7 +85,14 @@ func add() *http.Response {
 		return nil
 	}
 
-	resp, err := http.Post("http://localhost:8080/video/add", "application/json", bytes.NewBuffer(jsonData))
+	req, err := createAuthenticatedRequest("POST", "http://localhost:8080/video/add", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return nil
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error making POST request:", err)
 		return nil
@@ -60,7 +102,15 @@ func add() *http.Response {
 
 func get() *http.Response {
 	fmt.Println("Retrieving video...")
-	resp, err := http.Get("http://localhost:8080/video/get")
+
+	req, err := createAuthenticatedRequest("GET", "http://localhost:8080/video/get", nil)
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return nil
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
 		return nil
@@ -81,7 +131,15 @@ func done() *http.Response {
 	}
 
 	fmt.Println("Marking video as done:", videoUuid)
-	resp, err := http.Post("http://localhost:8080/video/done", "application/json", bytes.NewBuffer([]byte(jsonData)))
+
+	req, err := createAuthenticatedRequest("POST", "http://localhost:8080/video/done", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return nil
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error making POST request:", err)
 		return nil
@@ -102,7 +160,15 @@ func fail() *http.Response {
 	}
 
 	fmt.Println("Failing video:", videoUuid)
-	resp, err := http.Post("http://localhost:8080/video/fail", "application/json", bytes.NewBuffer([]byte(jsonData)))
+
+	req, err := createAuthenticatedRequest("POST", "http://localhost:8080/video/fail", bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return nil
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error making POST request:", err)
 		return nil
@@ -112,7 +178,15 @@ func fail() *http.Response {
 
 func status() *http.Response {
 	fmt.Println("Retrieving status...")
-	resp, err := http.Get("http://localhost:8080/status")
+
+	req, err := createAuthenticatedRequest("GET", "http://localhost:8080/status", nil)
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return nil
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
 		return nil
