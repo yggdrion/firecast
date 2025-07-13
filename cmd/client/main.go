@@ -10,22 +10,34 @@ import (
 	"os"
 )
 
-func healthCheck() {
-	healthReq, err := http.Get("http://localhost:8080/healthz")
-	if err != nil {
-		fmt.Println("Error creating health check request:", err)
+func printResponse(resp *http.Response) {
+	if resp == nil {
+		fmt.Println("No response received.")
 		return
 	}
-	if healthReq.StatusCode != http.StatusOK {
-		fmt.Printf("Health check failed with status code: %d\n", healthReq.StatusCode)
-		return
-	}
-	fmt.Println("Health check successful, server is running.")
+	defer resp.Body.Close()
 
-	defer healthReq.Body.Close()
+	fmt.Println("Response Status Code:", resp.StatusCode)
+	fmt.Println("Response Headers:", resp.Header)
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return
+	}
+	fmt.Println("Response Body:", string(body))
 }
 
-func addVideo() {
+func healthCheck() *http.Response {
+	resp, err := http.Get("http://localhost:8080/healthz")
+	if err != nil {
+		fmt.Println("Error making GET request:", err)
+		return nil
+	}
+	return resp
+}
+
+func addVideo() *http.Response {
 	fmt.Println("Sending video request...")
 	videoReq := structs.VideoRequest{
 		VideoUrl:   "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
@@ -35,67 +47,49 @@ func addVideo() {
 	jsonData, err := json.Marshal(videoReq)
 	if err != nil {
 		fmt.Println("Error marshalling JSON:", err)
-		return
+		return nil
 	}
 
 	resp, err := http.Post("http://localhost:8080/addvideo", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println("Error making POST request:", err)
-		return
+		return nil
 	}
-	defer resp.Body.Close()
-
-	fmt.Println("Response Status Code:", resp.StatusCode)
-	fmt.Println("Response Headers:", resp.Header)
-
-	// Read the response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading response body:", err)
-		return
-	}
-	fmt.Println("Response Body:", string(body))
+	return resp
 }
 
-func getVideo() {
+func getVideo() *http.Response {
 	fmt.Println("Retrieving video...")
 	resp, err := http.Get("http://localhost:8080/getvideo")
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
-		return
+		return nil
 	}
-	defer resp.Body.Close()
-
-	fmt.Println("Response Status Code:", resp.StatusCode)
-	fmt.Println("Response Headers:", resp.Header)
-
-	// Read the response body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading response body:", err)
-		return
-	}
-	fmt.Println("Response Body:", string(body))
+	return resp
 }
 
 func main() {
-	// params := os.Args[1:]
 	if len(os.Args) < 2 {
 		fmt.Println("Usage: go run main.go <command>")
 		fmt.Println("Commands: health, addvideo, getvideo")
 		return
 	}
+
 	command := os.Args[1]
+	var resp *http.Response
+
 	switch command {
 	case "health":
-		healthCheck()
+		resp = healthCheck()
 	case "addvideo":
-		addVideo()
+		resp = addVideo()
 	case "getvideo":
-		getVideo()
+		resp = getVideo()
 	default:
 		fmt.Println("Unknown command:", command)
 		fmt.Println("Available commands: health, addvideo, getvideo")
+		return
 	}
 
+	printResponse(resp)
 }
