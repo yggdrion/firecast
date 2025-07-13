@@ -22,3 +22,10 @@ type VideoStore struct {
 	VideoUrl   string `json:"videoUrl"`
 	PlaylistId int    `json:"playlistId"`
 }
+
+type VideoFailRequest struct {
+	Uuid string `json:"uuid"`
+}
+type VideoAckRequest struct {
+	Uuid string `json:"uuid"`
+}

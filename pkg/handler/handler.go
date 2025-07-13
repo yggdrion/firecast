@@ -151,3 +151,106 @@ func (h *Handler) VideoGetHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(videoResponse)
 }
+
+func (h *Handler) VideoFailHandler(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+	w.Header().Set("Content-Type", "application/json")
+
+	var failReq structs.VideoFailRequest
+	if err := json.NewDecoder(r.Body).Decode(&failReq); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Invalid JSON format",
+		})
+		return
+	}
+	videoUuid := failReq.Uuid
+	if videoUuid == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "UUID is required",
+		})
+		return
+	}
+
+	if err := h.rdb.ZRem(ctx, "videos:wip", videoUuid).Err(); err != nil {
+		log.Printf("Failed to remove video from wip: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to remove video from wip",
+		})
+		return
+	}
+
+	if err := h.rdb.SAdd(ctx, "videos:failed", videoUuid).Err(); err != nil {
+		log.Printf("Failed to add video to failed set: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to add video to failed set",
+		})
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":  true,
+		"message": "Video marked as failed",
+		"uuid":    videoUuid,
+	})
+
+}
+
+func (h *Handler) VideoAckHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	w.Header().Set("Content-Type", "application/json")
+
+	var ackReq structs.VideoAckRequest
+	if err := json.NewDecoder(r.Body).Decode(&ackReq); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Invalid JSON format",
+		})
+		return
+	}
+
+	videoUuid := ackReq.Uuid
+	if videoUuid == "" {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "UUID is required",
+		})
+		return
+	}
+
+	if err := h.rdb.ZRem(ctx, "videos:wip", videoUuid).Err(); err != nil {
+		log.Printf("Failed to remove video from wip: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to remove video from wip",
+		})
+		return
+	}
+
+	if err := h.rdb.SAdd(ctx, "videos:ack", videoUuid).Err(); err != nil {
+		log.Printf("Failed to add video to acknowledged set: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to acknowledge video",
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]any{
+		"status":  true,
+		"message": "Video acknowledged",
+	})
+}
