@@ -63,6 +63,25 @@ func printResponse(resp *http.Response) {
 	fmt.Println("Response Body:", string(body))
 }
 
+func printPlaylistsResponse(resp *http.Response) {
+	if resp == nil {
+		fmt.Println("No response received.")
+		return
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("Response Status Code:", resp.StatusCode)
+	fmt.Println("Response Headers:", resp.Header)
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("Error reading response body:", err)
+		return
+	}
+	fmt.Println("Response Body:", string(body))
+
+}
+
 func health() *http.Response {
 	resp, err := http.Get("http://localhost:8080/healthz")
 	if err != nil {
@@ -75,7 +94,7 @@ func health() *http.Response {
 func add() *http.Response {
 	fmt.Println("Sending video request...")
 	videoReq := structs.VideoAddRequest{
-		VideoUrl:   "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+		VideoUrl:   "https://www.youtube.com/watch?v=IcrbM1l_BoI",
 		PlaylistId: 6,
 	}
 
@@ -194,6 +213,17 @@ func status() *http.Response {
 	return resp
 }
 
+func playlists() *http.Response {
+	fmt.Println("Retrieving playlists...")
+
+	resp, err := http.Get("http://localhost:8080/playlists")
+	if err != nil {
+		fmt.Println("Error making GET request:", err)
+		return nil
+	}
+	return resp
+}
+
 func help() {
 	fmt.Println("Usage: go run main.go <command>")
 	fmt.Println("Commands:")
@@ -203,6 +233,7 @@ func help() {
 	fmt.Println("  done <video_uuid> - Mark a video as done")
 	fmt.Println("  fail <video_uuid> - Mark a video as failed")
 	fmt.Println("  status - Get the status of the service")
+	fmt.Println("  playlists - Get all playlists")
 }
 
 func main() {
@@ -234,10 +265,16 @@ func main() {
 		resp = fail()
 	case "status":
 		resp = status()
+	case "playlists":
+		resp = playlists()
 	default:
 		help()
 		return
 	}
 
-	printResponse(resp)
+	if command == "playlists" {
+		printPlaylistsResponse(resp)
+	} else {
+		printResponse(resp)
+	}
 }

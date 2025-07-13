@@ -45,7 +45,7 @@ func main() {
 		log.Fatalf("Redis connection failed: %v", err)
 	}
 
-	h := handler.NewHandler(rdb, fireCastSecret)
+	h := handler.NewHandler(rdb, fireCastSecret, azuraCastApiKey, azuraCastDomain)
 
 	r := chi.NewRouter()
 
@@ -57,6 +57,7 @@ func main() {
 	// Public routes (no authentication required)
 	r.Get("/health", h.HealthzHandler)
 	r.Get("/healthz", h.HealthzHandler)
+	r.Get("/playlists", h.PlaylistsHandler)
 
 	// Protected routes (authentication required)
 	r.Group(func(r chi.Router) {

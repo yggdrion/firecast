@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"firecast/pkg/structs"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -14,14 +15,18 @@ import (
 )
 
 type Handler struct {
-	rdb            *redis.Client
-	fireCastSecret string
+	rdb             *redis.Client
+	fireCastSecret  string
+	azuraCastAPIKey string
+	azuraCastDomain string
 }
 
-func NewHandler(rdb *redis.Client, fireCastSecret string) *Handler {
+func NewHandler(rdb *redis.Client, fireCastSecret, azuraCastAPIKey, azuraCastDomain string) *Handler {
 	return &Handler{
-		rdb:            rdb,
-		fireCastSecret: fireCastSecret,
+		rdb:             rdb,
+		fireCastSecret:  fireCastSecret,
+		azuraCastAPIKey: azuraCastAPIKey,
+		azuraCastDomain: azuraCastDomain,
 	}
 }
 
@@ -458,4 +463,84 @@ func (h *Handler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(statusResponse)
+}
+
+func (h *Handler) PlaylistsHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	apiURL := fmt.Sprintf("https://%s/api/station/1/playlists", h.azuraCastDomain)
+
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		log.Printf("Failed to create request: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Failed to create request",
+		})
+		return
+	}
+
+	req.Header.Set("X-API-Key", h.azuraCastAPIKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Printf("Failed to send request: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Failed to send request to AzuraCast",
+		})
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("AzuraCast API error: %d %s", resp.StatusCode, string(body))
+		w.WriteHeader(http.StatusBadGateway)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": fmt.Sprintf("AzuraCast API error: %d %s", resp.StatusCode, string(body)),
+		})
+		return
+	}
+
+	var playlists []map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&playlists); err != nil {
+		log.Printf("Failed to parse JSON response: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Failed to parse JSON response",
+		})
+		return
+	}
+
+	result := make(map[string]int)
+	for _, playlist := range playlists {
+		name, ok := playlist["name"].(string)
+		if !ok {
+			continue
+		}
+		id, ok := playlist["id"].(float64)
+		if !ok {
+			continue
+		}
+		result[name] = int(id)
+	}
+
+	if len(result) == 0 {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "No playlists found in AzuraCast",
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
 }

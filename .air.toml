@@ -2,4 +2,4 @@
 cmd = "go build -o ./tmp/main.exe ./cmd/server/"
 bin = "./tmp/main.exe"
 include_ext = ["go", "tmpl", "html"]
-exclude_dir = ["vendor", "tmp", "valkey-data"]
+exclude_dir = ["vendor", "tmp", "valkey-data", "downloads"]
