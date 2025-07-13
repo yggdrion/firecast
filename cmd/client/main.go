@@ -68,10 +68,57 @@ func getVideo() *http.Response {
 	return resp
 }
 
+func ackVideo() *http.Response {
+
+	var videoUuid structs.VideoAckRequest
+
+	videoUuid.Uuid = os.Args[2] // Assuming the UUID is passed as a command line argument
+
+	jsonData, err := json.Marshal(videoUuid)
+	if err != nil {
+		fmt.Println("Error marshalling JSON:", err)
+		return nil
+	}
+
+	fmt.Println("Acknowledging video:", videoUuid)
+	resp, err := http.Post("http://localhost:8080/video/ack", "application/json", bytes.NewBuffer([]byte(jsonData)))
+	if err != nil {
+		fmt.Println("Error making POST request:", err)
+		return nil
+	}
+	return resp
+}
+
+func failVideo() *http.Response {
+
+	var videoUuid structs.VideoAckRequest
+
+	videoUuid.Uuid = os.Args[2] // Assuming the UUID is passed as a command line argument
+
+	jsonData, err := json.Marshal(videoUuid)
+	if err != nil {
+		fmt.Println("Error marshalling JSON:", err)
+		return nil
+	}
+
+	fmt.Println("Failing video:", videoUuid)
+	resp, err := http.Post("http://localhost:8080/video/fail", "application/json", bytes.NewBuffer([]byte(jsonData)))
+	if err != nil {
+		fmt.Println("Error making POST request:", err)
+		return nil
+	}
+	return resp
+}
+
 func main() {
-	if len(os.Args) < 2 {
+	if len(os.Args) <= 1 {
 		fmt.Println("Usage: go run main.go <command>")
-		fmt.Println("Commands: health, addvideo, getvideo")
+		fmt.Println("Commands: health, addvideo, getvideo, ackvideo, failvideo")
+
+		if len(os.Args) <= 2 {
+			fmt.Println("ackvideo, and failvideo, provide a video UUID as the second argument.")
+		}
+
 		return
 	}
 
@@ -85,6 +132,10 @@ func main() {
 		resp = addVideo()
 	case "getvideo":
 		resp = getVideo()
+	case "ackvideo":
+		resp = ackVideo()
+	case "failvideo":
+		resp = failVideo()
 	default:
 		fmt.Println("Unknown command:", command)
 		fmt.Println("Available commands: health, addvideo, getvideo")
