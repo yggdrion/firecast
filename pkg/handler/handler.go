@@ -228,6 +228,26 @@ func (h *Handler) VideoAckHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if already acknowledged
+	isAcked, err := h.rdb.SIsMember(ctx, "videos:ack", videoUuid).Result()
+	if err != nil {
+		log.Printf("Failed to check acknowledged set: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to check acknowledged set",
+		})
+		return
+	}
+	if isAcked {
+		w.WriteHeader(http.StatusConflict)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Already acknowledged",
+		})
+		return
+	}
+
 	if err := h.rdb.ZRem(ctx, "videos:wip", videoUuid).Err(); err != nil {
 		log.Printf("Failed to remove video from wip: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
