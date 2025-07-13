@@ -67,6 +67,9 @@ func main() {
 		r.Post("/video/done", h.VideoDoneHandler)
 		r.Post("/video/fail", h.VideoFailHandler)
 		r.Get("/status", h.StatusHandler)
+		r.Get("/status/fail")
+		r.Get("/status/wip")
+		r.Get("/status/done")
 	})
 
 	wiprecovery.WipRecovery(ctx, rdb)
