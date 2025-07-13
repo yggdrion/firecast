@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -37,7 +39,7 @@ func (h *Handler) HealthzHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
 		"success": true,
-		"message": "OK",
+		"message": "ok",
 	})
 }
 
@@ -55,9 +57,11 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	videoUuid := uuid.New().String()
+
 	fmt.Println("Adding uuid from VideoAddRequest to VideoStore")
 	videoStore := structs.VideoStore{
-		Uuid:       uuid.New().String(), // This should be generated or passed
+		Uuid:       videoUuid, // This should be generated or passed
 		VideoUrl:   videoReq.VideoUrl,
 		PlaylistId: videoReq.PlaylistId,
 	}
@@ -72,7 +76,7 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.rdb.LPush(ctx, "video_requests", jsonData).Err(); err != nil {
+	if err := h.rdb.LPush(ctx, "video:queue", jsonData).Err(); err != nil {
 		log.Printf("Failed to push video request to Redis: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -82,10 +86,19 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.rdb.HSet(ctx, fmt.Sprintf("video:meta:%s", videoUuid), map[string]any{
+		"url":             videoReq.VideoUrl,
+		"playlist_id":     videoReq.PlaylistId,
+		"retries":         0,
+		"added_at":        time.Now().Unix(),
+		"last_attempt_at": time.Now().Unix(),
+	})
+
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
 		"status":  true,
 		"message": "ok",
+		"uuid":    videoUuid,
 	})
 }
 
@@ -93,7 +106,7 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
-	videoData, err := h.rdb.RPop(ctx, "video_requests").Bytes()
+	videoHash, err := h.rdb.RPop(ctx, "video:queue").Bytes()
 	if err != nil {
 		if err.Error() == "redis: nil" {
 			w.WriteHeader(http.StatusNotFound)
@@ -112,21 +125,31 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var videoReq structs.VideoAddRequest
-	if err := json.Unmarshal(videoData, &videoReq); err != nil {
-		log.Printf("Failed to decode video request: %v", err)
+	videoData, err := h.rdb.HGetAll(ctx, fmt.Sprintf("video:meta:%s", videoHash)).Result()
+	if err != nil {
+		log.Printf("Failed to get video metadata from Redis: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
 			"success": false,
-			"message": "Failed to decode video request",
+			"message": "Failed to retrieve video metadata",
 		})
 		return
 	}
+	// Convert string fields to int64
+	retries, _ := strconv.ParseInt(videoData["retries"], 10, 64)
+	addedAt, _ := strconv.ParseInt(videoData["added_at"], 10, 64)
+	lastAttemptAt, _ := strconv.ParseInt(videoData["last_attempt_at"], 10, 64)
+	playlistId, _ := strconv.Atoi(videoData["playlist_id"])
 
-	response := structs.VideoResponse{
-		Message: fmt.Sprintf("Video request popped: URL=%s, PlaylistID=%s",
-			videoReq.VideoUrl, videoReq.PlaylistId),
-		Success: true,
+	// write the Hget data to  VideoResponse struct
+	videoResponse := structs.VideoResponse{
+		Uuid:          string(videoHash),
+		VideoUrl:      videoData["url"],
+		PlaylistId:    playlistId,
+		Retries:       int(retries),
+		AddedAt:       addedAt,
+		LastAttemptAt: lastAttemptAt,
 	}
-	json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(videoResponse)
 }

@@ -41,7 +41,7 @@ func addVideo() *http.Response {
 	fmt.Println("Sending video request...")
 	videoReq := structs.VideoAddRequest{
 		VideoUrl:   "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-		PlaylistId: "6",
+		PlaylistId: 6,
 	}
 
 	jsonData, err := json.Marshal(videoReq)
