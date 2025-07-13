@@ -110,6 +110,16 @@ func failVideo() *http.Response {
 	return resp
 }
 
+func status() *http.Response {
+	fmt.Println("Retrieving status...")
+	resp, err := http.Get("http://localhost:8080/status")
+	if err != nil {
+		fmt.Println("Error making GET request:", err)
+		return nil
+	}
+	return resp
+}
+
 func main() {
 	if len(os.Args) <= 1 {
 		fmt.Println("Usage: go run main.go <command>")
@@ -136,6 +146,8 @@ func main() {
 		resp = doneVideo()
 	case "failvideo":
 		resp = failVideo()
+	case "status":
+		resp = status()
 	default:
 		fmt.Println("Unknown command:", command)
 		fmt.Println("Available commands: health, addvideo, getvideo")

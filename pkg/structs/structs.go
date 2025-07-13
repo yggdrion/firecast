@@ -29,3 +29,10 @@ type VideoFailRequest struct {
 type VideoDoneRequest struct {
 	Uuid string `json:"uuid"`
 }
+
+type StatusResponse struct {
+	WipCount    int `json:"wipCount"`
+	DoneCount   int `json:"doneCount"`
+	FailCount   int `json:"failCount"`
+	QueueLength int `json:"queueLength"`
+}

@@ -10,7 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func StartWipRecovery(ctx context.Context, rdb *redis.Client) {
+func WipRecovery(ctx context.Context, rdb *redis.Client) {
 	go func() {
 		for {
 			now := float64(time.Now().Unix())

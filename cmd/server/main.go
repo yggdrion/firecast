@@ -59,9 +59,10 @@ func main() {
 	r.Get("/video/get", h.VideoGetHandler)
 	r.Post("/video/done", h.VideoDoneHandler)
 	r.Post("/video/fail", h.VideoFailHandler)
+	r.Get("/status", h.StatusHandler)
 
 	// Start background process for wip queue recovery
-	wiprecovery.StartWipRecovery(ctx, rdb)
+	wiprecovery.WipRecovery(ctx, rdb)
 
 	fmt.Println("Server starting on :8080")
 	http.ListenAndServe(":8080", r)

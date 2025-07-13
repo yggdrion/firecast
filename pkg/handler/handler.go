@@ -273,3 +273,61 @@ func (h *Handler) VideoDoneHandler(w http.ResponseWriter, r *http.Request) {
 		"message": "Video marked as done",
 	})
 }
+
+func (h *Handler) StatusHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	w.Header().Set("Content-Type", "application/json")
+
+	wipCount, err := h.rdb.ZCard(ctx, "videos:wip").Result()
+	if err != nil {
+		log.Printf("Failed to get wip count: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to get wip count",
+		})
+		return
+	}
+
+	doneCount, err := h.rdb.SCard(ctx, "videos:done").Result()
+	if err != nil {
+		log.Printf("Failed to get done count: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to get done count",
+		})
+		return
+	}
+
+	failedCount, err := h.rdb.SCard(ctx, "videos:failed").Result()
+	if err != nil {
+		log.Printf("Failed to get failed count: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to get failed count",
+		})
+		return
+	}
+
+	queueLength, err := h.rdb.LLen(ctx, "videos:queue").Result()
+	if err != nil {
+		log.Printf("Failed to get queue length: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to get queue length",
+		})
+		return
+	}
+
+	statusResponse := structs.StatusResponse{
+		WipCount:    int(wipCount),
+		DoneCount:   int(doneCount),
+		FailCount:   int(failedCount),
+		QueueLength: int(queueLength),
+	}
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(statusResponse)
+}
