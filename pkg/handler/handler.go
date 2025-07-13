@@ -59,7 +59,6 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 
 	videoUuid := uuid.New().String()
 
-	// Store only the UUID in the queue
 	if err := h.rdb.LPush(ctx, "video:queue", videoUuid).Err(); err != nil {
 		log.Printf("Failed to push video request to Redis: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -119,13 +118,12 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-	// Convert string fields to int64
+
 	retries, _ := strconv.ParseInt(videoData["retries"], 10, 64)
 	addedAt, _ := strconv.ParseInt(videoData["added_at"], 10, 64)
 	lastAttemptAt, _ := strconv.ParseInt(videoData["last_attempt_at"], 10, 64)
 	playlistId, _ := strconv.Atoi(videoData["playlist_id"])
 
-	// write the Hget data to  VideoResponse struct
 	videoResponse := structs.VideoResponse{
 		Uuid:          videoUuid,
 		VideoUrl:      videoData["url"],
