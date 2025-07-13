@@ -204,12 +204,12 @@ func (h *Handler) VideoFailHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *Handler) VideoAckHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) VideoDoneHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
-	var ackReq structs.VideoAckRequest
-	if err := json.NewDecoder(r.Body).Decode(&ackReq); err != nil {
+	var doneReq structs.VideoDoneRequest // Rename struct if needed
+	if err := json.NewDecoder(r.Body).Decode(&doneReq); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]any{
 			"status":  false,
@@ -218,7 +218,7 @@ func (h *Handler) VideoAckHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videoUuid := ackReq.Uuid
+	videoUuid := doneReq.Uuid
 	if videoUuid == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -228,22 +228,21 @@ func (h *Handler) VideoAckHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if already acknowledged
-	isAcked, err := h.rdb.SIsMember(ctx, "videos:ack", videoUuid).Result()
+	isDone, err := h.rdb.SIsMember(ctx, "videos:done", videoUuid).Result()
 	if err != nil {
-		log.Printf("Failed to check acknowledged set: %v", err)
+		log.Printf("Failed to check done set: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
 			"status":  false,
-			"message": "Failed to check acknowledged set",
+			"message": "Failed to check done set",
 		})
 		return
 	}
-	if isAcked {
+	if isDone {
 		w.WriteHeader(http.StatusConflict)
 		json.NewEncoder(w).Encode(map[string]any{
 			"status":  false,
-			"message": "Already acknowledged",
+			"message": "Already marked as done",
 		})
 		return
 	}
@@ -258,12 +257,12 @@ func (h *Handler) VideoAckHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.rdb.SAdd(ctx, "videos:ack", videoUuid).Err(); err != nil {
-		log.Printf("Failed to add video to acknowledged set: %v", err)
+	if err := h.rdb.SAdd(ctx, "videos:done", videoUuid).Err(); err != nil {
+		log.Printf("Failed to add video to done set: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
 			"status":  false,
-			"message": "Failed to acknowledge video",
+			"message": "Failed to mark video as done",
 		})
 		return
 	}
@@ -271,6 +270,6 @@ func (h *Handler) VideoAckHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
 		"status":  true,
-		"message": "Video acknowledged",
+		"message": "Video marked as done",
 	})
 }

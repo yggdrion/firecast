@@ -68,9 +68,9 @@ func getVideo() *http.Response {
 	return resp
 }
 
-func ackVideo() *http.Response {
+func doneVideo() *http.Response {
 
-	var videoUuid structs.VideoAckRequest
+	var videoUuid structs.VideoDoneRequest
 
 	videoUuid.Uuid = os.Args[2] // Assuming the UUID is passed as a command line argument
 
@@ -80,8 +80,8 @@ func ackVideo() *http.Response {
 		return nil
 	}
 
-	fmt.Println("Acknowledging video:", videoUuid)
-	resp, err := http.Post("http://localhost:8080/video/ack", "application/json", bytes.NewBuffer([]byte(jsonData)))
+	fmt.Println("Marking video as done:", videoUuid)
+	resp, err := http.Post("http://localhost:8080/video/done", "application/json", bytes.NewBuffer([]byte(jsonData)))
 	if err != nil {
 		fmt.Println("Error making POST request:", err)
 		return nil
@@ -91,7 +91,7 @@ func ackVideo() *http.Response {
 
 func failVideo() *http.Response {
 
-	var videoUuid structs.VideoAckRequest
+	var videoUuid structs.VideoDoneRequest
 
 	videoUuid.Uuid = os.Args[2] // Assuming the UUID is passed as a command line argument
 
@@ -113,10 +113,10 @@ func failVideo() *http.Response {
 func main() {
 	if len(os.Args) <= 1 {
 		fmt.Println("Usage: go run main.go <command>")
-		fmt.Println("Commands: health, addvideo, getvideo, ackvideo, failvideo")
+		fmt.Println("Commands: health, addvideo, getvideo, donevideo, failvideo")
 
 		if len(os.Args) <= 2 {
-			fmt.Println("ackvideo, and failvideo, provide a video UUID as the second argument.")
+			fmt.Println("donevideo, and failvideo, provide a video UUID as the second argument.")
 		}
 
 		return
@@ -132,8 +132,8 @@ func main() {
 		resp = addVideo()
 	case "getvideo":
 		resp = getVideo()
-	case "ackvideo":
-		resp = ackVideo()
+	case "donevideo":
+		resp = doneVideo()
 	case "failvideo":
 		resp = failVideo()
 	default:

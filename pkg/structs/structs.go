@@ -26,6 +26,6 @@ type VideoStore struct {
 type VideoFailRequest struct {
 	Uuid string `json:"uuid"`
 }
-type VideoAckRequest struct {
+type VideoDoneRequest struct {
 	Uuid string `json:"uuid"`
 }

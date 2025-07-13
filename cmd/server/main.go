@@ -57,7 +57,7 @@ func main() {
 	r.Get("/healthz", h.HealthzHandler)
 	r.Post("/video/add", h.VideoAddHandler)
 	r.Get("/video/get", h.VideoGetHandler)
-	r.Post("/video/ack", h.VideoAckHandler)
+	r.Post("/video/done", h.VideoDoneHandler)
 	r.Post("/video/fail", h.VideoFailHandler)
 
 	// Start background process for wip queue recovery
