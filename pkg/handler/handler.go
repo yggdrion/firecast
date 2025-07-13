@@ -219,7 +219,7 @@ func (h *Handler) VideoFailHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.rdb.SAdd(ctx, "videos:failed", videoUuid).Err(); err != nil {
+	if err := h.rdb.SAdd(ctx, "videos:fail", videoUuid).Err(); err != nil {
 		log.Printf("Failed to add video to failed set: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -332,7 +332,7 @@ func (h *Handler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	failedCount, err := h.rdb.SCard(ctx, "videos:failed").Result()
+	failedCount, err := h.rdb.SCard(ctx, "videos:fail").Result()
 	if err != nil {
 		log.Printf("Failed to get failed count: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
