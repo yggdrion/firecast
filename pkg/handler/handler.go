@@ -119,12 +119,22 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Add to videos:wip               → ZADD videos:wip (score = now + 600s)
-
 	h.rdb.ZAdd(ctx, "videos:wip", redis.Z{
 		Score:  float64(time.Now().Unix() + 600), // 10
 		Member: videoUuid,
 	})
+
+	// increase retry count
+	_, err = h.rdb.HIncrBy(ctx, fmt.Sprintf("videos:meta:%s", videoUuid), "retries", 1).Result()
+	if err != nil {
+		log.Printf("Failed to increment retry count for video %s: %v", videoUuid, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Failed to increment retry count",
+		})
+		return
+	}
 
 	retries, _ := strconv.ParseInt(videoData["retries"], 10, 64)
 	addedAt, _ := strconv.ParseInt(videoData["added_at"], 10, 64)
