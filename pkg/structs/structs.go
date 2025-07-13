@@ -1,6 +1,6 @@
 package structs
 
-type VideoRequest struct {
+type VideoAddRequest struct {
 	VideoUrl   string `json:"videoUrl"`
 	PlaylistId string `json:"playlistId"`
 }
@@ -8,4 +8,10 @@ type VideoRequest struct {
 type VideoResponse struct {
 	Message string `json:"message"`
 	Success bool   `json:"success"`
+}
+
+type VideoStore struct {
+	Uuid       string `json:"uuid"`
+	VideoUrl   string `json:"videoUrl"`
+	PlaylistId string `json:"playlistId"`
 }

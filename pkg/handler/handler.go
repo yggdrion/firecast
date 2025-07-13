@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -44,7 +45,7 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
-	var videoReq structs.VideoRequest
+	var videoReq structs.VideoAddRequest
 	if err := json.NewDecoder(r.Body).Decode(&videoReq); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -54,7 +55,14 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jsonData, err := json.Marshal(videoReq)
+	fmt.Println("Adding uuid from VideoAddRequest to VideoStore")
+	videoStore := structs.VideoStore{
+		Uuid:       uuid.New().String(), // This should be generated or passed
+		VideoUrl:   videoReq.VideoUrl,
+		PlaylistId: videoReq.PlaylistId,
+	}
+
+	jsonData, err := json.Marshal(videoStore)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -74,9 +82,10 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
 		"status":  true,
-		"message": fmt.Sprintf("Video request received for URL: %s, Playlist: %s", videoReq.VideoUrl, videoReq.PlaylistId),
+		"message": "ok",
 	})
 }
 
@@ -103,7 +112,7 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var videoReq structs.VideoRequest
+	var videoReq structs.VideoAddRequest
 	if err := json.Unmarshal(videoData, &videoReq); err != nil {
 		log.Printf("Failed to decode video request: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)

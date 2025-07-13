@@ -39,7 +39,7 @@ func healthCheck() *http.Response {
 
 func addVideo() *http.Response {
 	fmt.Println("Sending video request...")
-	videoReq := structs.VideoRequest{
+	videoReq := structs.VideoAddRequest{
 		VideoUrl:   "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
 		PlaylistId: "6",
 	}
