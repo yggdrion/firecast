@@ -59,7 +59,7 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 
 	videoUuid := uuid.New().String()
 
-	if err := h.rdb.LPush(ctx, "video:queue", videoUuid).Err(); err != nil {
+	if err := h.rdb.LPush(ctx, "videos:queue", videoUuid).Err(); err != nil {
 		log.Printf("Failed to push video request to Redis: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -69,7 +69,7 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.rdb.HSet(ctx, fmt.Sprintf("video:meta:%s", videoUuid), map[string]any{
+	h.rdb.HSet(ctx, fmt.Sprintf("videos:meta:%s", videoUuid), map[string]any{
 		"url":             videoReq.VideoUrl,
 		"playlist_id":     videoReq.PlaylistId,
 		"retries":         0,
@@ -89,10 +89,10 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
-	videoUuid, err := h.rdb.RPop(ctx, "video:queue").Result()
+	videoUuid, err := h.rdb.RPop(ctx, "videos:queue").Result()
 	if err != nil {
 		if err.Error() == "redis: nil" {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusNoContent)
 			json.NewEncoder(w).Encode(map[string]any{
 				"success": false,
 				"message": "No video requests available",
@@ -108,7 +108,7 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videoData, err := h.rdb.HGetAll(ctx, fmt.Sprintf("video:meta:%s", videoUuid)).Result()
+	videoData, err := h.rdb.HGetAll(ctx, fmt.Sprintf("videos:meta:%s", videoUuid)).Result()
 	if err != nil {
 		log.Printf("Failed to get video metadata from Redis: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -118,6 +118,13 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+
+	// Add to videos:wip               → ZADD videos:wip (score = now + 600s)
+
+	h.rdb.ZAdd(ctx, "videos:wip", redis.Z{
+		Score:  float64(time.Now().Unix() + 600), // 10
+		Member: videoUuid,
+	})
 
 	retries, _ := strconv.ParseInt(videoData["retries"], 10, 64)
 	addedAt, _ := strconv.ParseInt(videoData["added_at"], 10, 64)
