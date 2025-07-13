@@ -43,7 +43,7 @@ func (h *Handler) HealthzHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) VideoAddHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
@@ -85,7 +85,7 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) VideoGetHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
@@ -120,11 +120,10 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.rdb.ZAdd(ctx, "videos:wip", redis.Z{
-		Score:  float64(time.Now().Unix() + 600), // 10
+		Score:  float64(time.Now().Unix() + 60),
 		Member: videoUuid,
 	})
 
-	// increase retry count
 	_, err = h.rdb.HIncrBy(ctx, fmt.Sprintf("videos:meta:%s", videoUuid), "retries", 1).Result()
 	if err != nil {
 		log.Printf("Failed to increment retry count for video %s: %v", videoUuid, err)

@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"firecast/pkg/handler"
+	"firecast/pkg/wiprecovery"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -54,8 +55,11 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Get("/healthz", h.HealthzHandler)
-	r.Post("/video/add", h.AddVideoHandler)
-	r.Get("/video/get", h.GetVideoHandler)
+	r.Post("/video/add", h.VideoAddHandler)
+	r.Get("/video/get", h.VideoGetHandler)
+
+	// Start background process for wip queue recovery
+	wiprecovery.StartWipRecovery(ctx, rdb)
 
 	fmt.Println("Server starting on :8080")
 	http.ListenAndServe(":8080", r)
