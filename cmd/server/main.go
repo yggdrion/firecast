@@ -54,8 +54,8 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	r.Get("/healthz", h.HealthzHandler)
-	r.Post("/addvideo", h.AddVideoHandler)
-	r.Get("/getvideo", h.GetVideoHandler)
+	r.Post("/video/add", h.AddVideoHandler)
+	r.Get("/video/get", h.GetVideoHandler)
 
 	fmt.Println("Server starting on :8080")
 	http.ListenAndServe(":8080", r)

@@ -50,7 +50,7 @@ func addVideo() *http.Response {
 		return nil
 	}
 
-	resp, err := http.Post("http://localhost:8080/addvideo", "application/json", bytes.NewBuffer(jsonData))
+	resp, err := http.Post("http://localhost:8080/video/add", "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println("Error making POST request:", err)
 		return nil
@@ -60,7 +60,7 @@ func addVideo() *http.Response {
 
 func getVideo() *http.Response {
 	fmt.Println("Retrieving video...")
-	resp, err := http.Get("http://localhost:8080/getvideo")
+	resp, err := http.Get("http://localhost:8080/video/get")
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
 		return nil
