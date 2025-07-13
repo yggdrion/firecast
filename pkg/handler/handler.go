@@ -57,6 +57,15 @@ func (h *Handler) VideoAddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if videoReq.VideoUrl == "" || videoReq.PlaylistId == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "VideoUrl and PlaylistId are required",
+		})
+		return
+	}
+
 	videoUuid := uuid.New().String()
 
 	if err := h.rdb.LPush(ctx, "videos:queue", videoUuid).Err(); err != nil {
@@ -69,13 +78,22 @@ func (h *Handler) VideoAddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.rdb.HSet(ctx, fmt.Sprintf("videos:meta:%s", videoUuid), map[string]any{
+	meta := map[string]any{
 		"url":             videoReq.VideoUrl,
 		"playlist_id":     videoReq.PlaylistId,
 		"retries":         0,
 		"added_at":        time.Now().Unix(),
 		"last_attempt_at": time.Now().Unix(),
-	})
+	}
+	if err := h.rdb.HSet(ctx, fmt.Sprintf("videos:meta:%s", videoUuid), meta).Err(); err != nil {
+		log.Printf("Failed to set video metadata: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"status":  false,
+			"message": "Failed to store video metadata",
+		})
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]any{
@@ -91,7 +109,7 @@ func (h *Handler) VideoGetHandler(w http.ResponseWriter, r *http.Request) {
 
 	videoUuid, err := h.rdb.RPop(ctx, "videos:queue").Result()
 	if err != nil {
-		if err.Error() == "redis: nil" {
+		if err == redis.Nil {
 			w.WriteHeader(http.StatusNoContent)
 			json.NewEncoder(w).Encode(map[string]any{
 				"success": false,
@@ -119,13 +137,29 @@ func (h *Handler) VideoGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.rdb.ZAdd(ctx, "videos:wip", redis.Z{
+	if len(videoData) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Video metadata not found",
+		})
+		return
+	}
+
+	if err := h.rdb.ZAdd(ctx, "videos:wip", redis.Z{
 		Score:  float64(time.Now().Unix() + 60),
 		Member: videoUuid,
-	})
+	}).Err(); err != nil {
+		log.Printf("Failed to add video to wip: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"message": "Failed to add video to wip",
+		})
+		return
+	}
 
-	_, err = h.rdb.HIncrBy(ctx, fmt.Sprintf("videos:meta:%s", videoUuid), "retries", 1).Result()
-	if err != nil {
+	if _, err := h.rdb.HIncrBy(ctx, fmt.Sprintf("videos:meta:%s", videoUuid), "retries", 1).Result(); err != nil {
 		log.Printf("Failed to increment retry count for video %s: %v", videoUuid, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -135,7 +169,7 @@ func (h *Handler) VideoGetHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	retries, _ := strconv.ParseInt(videoData["retries"], 10, 64)
+	retries, _ := strconv.Atoi(videoData["retries"])
 	addedAt, _ := strconv.ParseInt(videoData["added_at"], 10, 64)
 	lastAttemptAt, _ := strconv.ParseInt(videoData["last_attempt_at"], 10, 64)
 	playlistId, _ := strconv.Atoi(videoData["playlist_id"])
@@ -144,7 +178,7 @@ func (h *Handler) VideoGetHandler(w http.ResponseWriter, r *http.Request) {
 		Uuid:          videoUuid,
 		VideoUrl:      videoData["url"],
 		PlaylistId:    playlistId,
-		Retries:       int(retries),
+		Retries:       retries + 1, // incremented above
 		AddedAt:       addedAt,
 		LastAttemptAt: lastAttemptAt,
 	}
@@ -153,7 +187,6 @@ func (h *Handler) VideoGetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) VideoFailHandler(w http.ResponseWriter, r *http.Request) {
-
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
@@ -201,14 +234,13 @@ func (h *Handler) VideoFailHandler(w http.ResponseWriter, r *http.Request) {
 		"message": "Video marked as failed",
 		"uuid":    videoUuid,
 	})
-
 }
 
 func (h *Handler) VideoDoneHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
-	var doneReq structs.VideoDoneRequest // Rename struct if needed
+	var doneReq structs.VideoDoneRequest
 	if err := json.NewDecoder(r.Body).Decode(&doneReq); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]any{
