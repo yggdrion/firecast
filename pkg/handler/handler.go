@@ -59,24 +59,8 @@ func (h *Handler) AddVideoHandler(w http.ResponseWriter, r *http.Request) {
 
 	videoUuid := uuid.New().String()
 
-	fmt.Println("Adding uuid from VideoAddRequest to VideoStore")
-	videoStore := structs.VideoStore{
-		Uuid:       videoUuid, // This should be generated or passed
-		VideoUrl:   videoReq.VideoUrl,
-		PlaylistId: videoReq.PlaylistId,
-	}
-
-	jsonData, err := json.Marshal(videoStore)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]any{
-			"status":  false,
-			"message": "Failed to encode video request",
-		})
-		return
-	}
-
-	if err := h.rdb.LPush(ctx, "video:queue", jsonData).Err(); err != nil {
+	// Store only the UUID in the queue
+	if err := h.rdb.LPush(ctx, "video:queue", videoUuid).Err(); err != nil {
 		log.Printf("Failed to push video request to Redis: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]any{
@@ -106,7 +90,7 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "application/json")
 
-	videoHash, err := h.rdb.RPop(ctx, "video:queue").Bytes()
+	videoUuid, err := h.rdb.RPop(ctx, "video:queue").Result()
 	if err != nil {
 		if err.Error() == "redis: nil" {
 			w.WriteHeader(http.StatusNotFound)
@@ -125,7 +109,7 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videoData, err := h.rdb.HGetAll(ctx, fmt.Sprintf("video:meta:%s", videoHash)).Result()
+	videoData, err := h.rdb.HGetAll(ctx, fmt.Sprintf("video:meta:%s", videoUuid)).Result()
 	if err != nil {
 		log.Printf("Failed to get video metadata from Redis: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -143,7 +127,7 @@ func (h *Handler) GetVideoHandler(w http.ResponseWriter, r *http.Request) {
 
 	// write the Hget data to  VideoResponse struct
 	videoResponse := structs.VideoResponse{
-		Uuid:          string(videoHash),
+		Uuid:          videoUuid,
 		VideoUrl:      videoData["url"],
 		PlaylistId:    playlistId,
 		Retries:       int(retries),
