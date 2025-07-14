@@ -30,7 +30,6 @@ func NewHandler(rdb *redis.Client, fireCastSecret, azuraCastAPIKey, azuraCastDom
 	}
 }
 
-// AuthMiddleware checks for the FIRECAST_SECRET in the Authorization header
 func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -45,7 +44,6 @@ func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		// Expected format: "Bearer <secret>" or just "<secret>"
 		token := authHeader
 		if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
 			token = authHeader[7:]
@@ -360,7 +358,6 @@ func (h *Handler) VideoDoneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if video is already marked as failed
 	isFailed, err := h.rdb.SIsMember(ctx, "videos:fail", videoUuid).Result()
 	if err != nil {
 		log.Printf("Failed to check fail set: %v", err)

@@ -54,12 +54,10 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	// Public routes (no authentication required)
 	r.Get("/health", h.HealthzHandler)
 	r.Get("/healthz", h.HealthzHandler)
 	r.Get("/playlists", h.PlaylistsHandler)
 
-	// Protected routes (authentication required)
 	r.Group(func(r chi.Router) {
 		r.Use(h.AuthMiddleware)
 		r.Post("/video/add", h.VideoAddHandler)

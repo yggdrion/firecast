@@ -19,10 +19,9 @@ func WipRecovery(ctx context.Context, rdb *redis.Client) {
 		fmt.Println("Error loading .env file")
 	}
 
-	// Parse environment variables with defaults
 	wipTimeoutStr := os.Getenv("WIP_TIMEOUT")
 	if wipTimeoutStr == "" {
-		wipTimeoutStr = "300" // 5 minutes default
+		wipTimeoutStr = "300"
 	}
 	wipTimeout, err := strconv.Atoi(wipTimeoutStr)
 	if err != nil {
@@ -32,7 +31,7 @@ func WipRecovery(ctx context.Context, rdb *redis.Client) {
 
 	wipRetryStr := os.Getenv("WIP_RETRY")
 	if wipRetryStr == "" {
-		wipRetryStr = "3" // 3 retries default
+		wipRetryStr = "3"
 	}
 	maxRetries, err := strconv.Atoi(wipRetryStr)
 	if err != nil {
@@ -42,7 +41,7 @@ func WipRecovery(ctx context.Context, rdb *redis.Client) {
 
 	wipFrequencyStr := os.Getenv("WIP_INTERVAL")
 	if wipFrequencyStr == "" {
-		wipFrequencyStr = "10" // 10 seconds default
+		wipFrequencyStr = "10"
 	}
 	wipFrequency, err := strconv.Atoi(wipFrequencyStr)
 	if err != nil {

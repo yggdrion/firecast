@@ -15,7 +15,6 @@ import (
 var fireCastSecret string
 
 func init() {
-	// Load .env file if it exists
 	godotenv.Load()
 	fireCastSecret = os.Getenv("FIRECAST_SECRET")
 }
@@ -170,7 +169,7 @@ func fail() *http.Response {
 
 	var videoUuid structs.VideoDoneRequest
 
-	videoUuid.Uuid = os.Args[2] // Assuming the UUID is passed as a command line argument
+	videoUuid.Uuid = os.Args[2]
 
 	jsonData, err := json.Marshal(videoUuid)
 	if err != nil {
