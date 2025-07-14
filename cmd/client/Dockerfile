@@ -1,5 +1,5 @@
 # Multi-stage build
-FROM golang:1.24-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Install dependencies
 RUN apk add --no-cache git
@@ -15,7 +15,7 @@ COPY cmd/ ./cmd/
 COPY pkg/ ./pkg/
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o server cmd/server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o client cmd/client/main.go
 
 # Final stage
 FROM alpine:latest
@@ -26,7 +26,7 @@ RUN apk add --no-cache ffmpeg ca-certificates
 WORKDIR /root/
 
 # Copy the binary from builder stage
-COPY --from=builder /app/server .
+COPY --from=builder /app/client .
 
 # Create downloads directory
 RUN mkdir -p downloads
@@ -35,4 +35,4 @@ RUN mkdir -p downloads
 EXPOSE 8080
 
 # Run the binary
-CMD ["./server"]
+CMD ["./client"]
