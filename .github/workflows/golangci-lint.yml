@@ -1,7 +1,9 @@
 name: 💫 Golangci Lint
+
 on:
   pull_request:
-    - main
+    branches:
+      - main
 
 permissions:
   contents: read
