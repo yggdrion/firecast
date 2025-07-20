@@ -4,4 +4,4 @@ yt-dlp==2025.6.30
 paramiko==3.5.1
 fastapi==0.116.1
 requests==2.32.4
-ruff== 0.12.3
+ruff== 0.12.4
