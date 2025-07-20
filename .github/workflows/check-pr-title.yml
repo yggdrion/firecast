@@ -1,4 +1,4 @@
-name: 🔍 Check PR Title
+name: 🔍 Pull Request Title
 
 on:
   pull_request:

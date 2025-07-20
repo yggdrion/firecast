@@ -1,4 +1,4 @@
-name: 🧪 PR Test Build
+name: 🧪 Test Docker Build
 
 on:
   pull_request:
