@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/yggdrion/firecast/compare/v1.2.0...v1.2.1) (2025-07-22)
+
+### Bug Fixes
+
+* build error ([f66a11e](https://github.com/yggdrion/firecast/commit/f66a11e2deb6a0bc51b1c24226cef98e9589e64e))
+* speedup multiarch ([#17](https://github.com/yggdrion/firecast/issues/17)) ([2deb41a](https://github.com/yggdrion/firecast/commit/2deb41ae47437c32ba640f36d8a39338ea705c71))
+
 ## [1.2.0](https://github.com/yggdrion/firecast/compare/v1.1.4...v1.2.0) (2025-07-22)
 
 ### Features
