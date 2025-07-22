@@ -73,5 +73,7 @@ func main() {
 	wiprecovery.WipRecovery(ctx, rdb)
 
 	fmt.Println("Server starting on :8080")
-	http.ListenAndServe(":8080", r)
+	if err := http.ListenAndServe(":8080", r); err != nil {
+		log.Fatalf("Server failed to start: %v", err)
+	}
 }

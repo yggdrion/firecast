@@ -135,7 +135,11 @@ func (vp *VideoProcessor) uploadToAzuraCast(localFile string) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("failed to send request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Warning: failed to close response body: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -313,7 +317,7 @@ func (vp *VideoProcessor) processVideo(video *structs.VideoResponse) error {
 }
 
 func (vp *VideoProcessor) run() {
-	log.Println("Starting simplified video processing...")
+	log.Println("Starting video processing...")
 
 	for {
 		video, err := vp.getNextVideo()

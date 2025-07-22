@@ -15,7 +15,7 @@ import (
 var fireCastSecret string
 
 func init() {
-	godotenv.Load()
+	_ = godotenv.Load()
 	fireCastSecret = os.Getenv("FIRECAST_SECRET")
 }
 
@@ -49,7 +49,11 @@ func printResponse(resp *http.Response) {
 		fmt.Println("No response received.")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Printf("Warning: failed to close response body: %v\n", err)
+		}
+	}()
 
 	fmt.Println("Response Status Code:", resp.StatusCode)
 	fmt.Println("Response Headers:", resp.Header)
@@ -67,7 +71,11 @@ func printPlaylistsResponse(resp *http.Response) {
 		fmt.Println("No response received.")
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			fmt.Printf("Warning: failed to close response body: %v\n", err)
+		}
+	}()
 
 	fmt.Println("Response Status Code:", resp.StatusCode)
 	fmt.Println("Response Headers:", resp.Header)

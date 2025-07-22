@@ -37,10 +37,12 @@ func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 		authHeader := r.Header.Get("Authorization")
 		if authHeader == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]any{
+			if err := json.NewEncoder(w).Encode(map[string]any{
 				"success": false,
 				"message": "Authorization required",
-			})
+			}); err != nil {
+				log.Printf("Error encoding JSON response: %v", err)
+			}
 			return
 		}
 
@@ -51,10 +53,12 @@ func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
 
 		if token != h.fireCastSecret {
 			w.WriteHeader(http.StatusUnauthorized)
-			json.NewEncoder(w).Encode(map[string]any{
+			if err := json.NewEncoder(w).Encode(map[string]any{
 				"success": false,
 				"message": "Invalid secret",
-			})
+			}); err != nil {
+				log.Printf("Error encoding JSON response: %v", err)
+			}
 			return
 		}
 
@@ -70,10 +74,12 @@ func (h *Handler) HealthzHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Redis connection failed: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode(map[string]any{
+		if err := json.NewEncoder(w).Encode(map[string]any{
 			"success": false,
 			"message": "Redis connection failed",
-		})
+		}); err != nil {
+			log.Printf("Error encoding JSON response: %v", err)
+		}
 		return
 	}
 
