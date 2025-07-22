@@ -21,7 +21,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o client cmd/client
 FROM alpine:latest
 
 # Install runtime dependencies
-RUN apk add --no-cache ffmpeg ca-certificates
+RUN apk add --no-cache ffmpeg yt-dlp ca-certificates
 
 WORKDIR /root/
 
