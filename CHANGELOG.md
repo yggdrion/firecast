@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/yggdrion/firecast/compare/v1.1.4...v1.2.0) (2025-07-22)
+
+### Features
+
+* refactor go (server/client) ([#14](https://github.com/yggdrion/firecast/issues/14)) ([ec4b4c9](https://github.com/yggdrion/firecast/commit/ec4b4c9c02754f326282e9662961660811c17def))
+
 ## [1.1.4](https://github.com/yggdrion/firecast/compare/v1.1.3...v1.1.4) (2025-07-20)
 
 ## [1.1.3](https://github.com/yggdrion/firecast/compare/v1.1.2...v1.1.3) (2025-07-12)
