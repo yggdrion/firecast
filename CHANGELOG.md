@@ -1,3 +1,9 @@
+## [1.2.2](https://github.com/yggdrion/firecast/compare/v1.2.1...v1.2.2) (2025-07-22)
+
+### Bug Fixes
+
+* cleaner repo ([5e0ef61](https://github.com/yggdrion/firecast/commit/5e0ef611bbdd3b607c98a0c3996c974b8ebd7971))
+
 ## [1.2.1](https://github.com/yggdrion/firecast/compare/v1.2.0...v1.2.1) (2025-07-22)
 
 ### Bug Fixes
