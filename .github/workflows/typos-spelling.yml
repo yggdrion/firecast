@@ -1,0 +1,22 @@
+name: 📚 Spelling and Typos
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches:
+      - main
+
+env:
+  CLICOLOR: 1
+
+jobs:
+  typos-spelling:
+    name: Spell Check with Typos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Actions Repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Spell Check Repo
+        uses: crate-ci/typos@392b78fe18a52790c53f42456e46124f77346842

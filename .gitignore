@@ -197,3 +197,7 @@ cython_debug/
 *.webm
 *.mp4
 
+*.exe
+tmp/
+video_requests.json
+valkey-data/

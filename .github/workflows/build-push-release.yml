@@ -68,11 +68,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push Docker image 🐳
+      - name: Push Docker images (server) 🐳
         run: |
+          # Build and push server image
           docker buildx build --platform linux/amd64,linux/arm64 \
-            -t ghcr.io/${{ github.repository }}:$VERSION \
-            -t ghcr.io/${{ github.repository }}:latest \
+            -t ghcr.io/${{ github.repository }}/server:$VERSION \
+            -t ghcr.io/${{ github.repository }}/server:latest \
+            -f cmd/server/Dockerfile \
+            --push \
+            --cache-from=type=gha \
+            --cache-to=type=gha,mode=max .
+
+      - name: Push Docker images (client) 🐳
+        run: |
+          # Build and push client image
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -t ghcr.io/${{ github.repository }}/client:$VERSION \
+            -t ghcr.io/${{ github.repository }}/client:latest \
+            -f cmd/client/Dockerfile \
             --push \
             --cache-from=type=gha \
             --cache-to=type=gha,mode=max .
