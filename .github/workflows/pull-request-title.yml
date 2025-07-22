@@ -5,7 +5,7 @@ on:
     types: [opened, edited, synchronize]
 
 jobs:
-  check-pr-title:
+  pull-request-title:
     runs-on: ubuntu-latest
     steps:
       - name: ✅ Validate PR title format

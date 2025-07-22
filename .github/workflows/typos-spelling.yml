@@ -12,7 +12,7 @@ env:
   CLICOLOR: 1
 
 jobs:
-  spelling:
+  typos-spelling:
     name: Spell Check with Typos
     runs-on: ubuntu-latest
     steps:

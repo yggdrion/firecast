@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pr-test-build:
+  docker-build-test:
     runs-on: ubuntu-latest
 
     steps:
