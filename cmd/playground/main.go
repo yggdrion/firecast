@@ -91,9 +91,16 @@ func health() *http.Response {
 }
 
 func add() *http.Response {
+	if len(os.Args) < 3 {
+		fmt.Println("Error: YouTube video URL is required")
+		fmt.Println("Usage: go run main.go add <youtube_url>")
+		return nil
+	}
+
+	videoUrl := os.Args[2]
 	fmt.Println("Sending video request...")
 	videoReq := structs.VideoAddRequest{
-		VideoUrl:   "https://www.youtube.com/watch?v=IcrbM1l_BoI",
+		VideoUrl:   videoUrl,
 		PlaylistId: 6,
 	}
 
@@ -227,7 +234,7 @@ func help() {
 	fmt.Println("Usage: go run main.go <command>")
 	fmt.Println("Commands:")
 	fmt.Println("  health - Check the health of the service")
-	fmt.Println("  add - Add a video")
+	fmt.Println("  add <youtube_url> - Add a video")
 	fmt.Println("  get - Get a video")
 	fmt.Println("  done <video_uuid> - Mark a video as done")
 	fmt.Println("  fail <video_uuid> - Mark a video as failed")
