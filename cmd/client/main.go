@@ -53,12 +53,10 @@ func NewVideoProcessor() (*VideoProcessor, error) {
 }
 
 func (vp *VideoProcessor) downloadVideoAsMP3(videoURL string) (string, error) {
-	// Ensure downloads directory exists
 	if err := os.MkdirAll("downloads", 0755); err != nil {
 		return "", fmt.Errorf("failed to create downloads directory: %v", err)
 	}
 
-	// Use yt-dlp to download and convert to MP3
 	cmd := exec.Command("yt-dlp",
 		"--format", "bestaudio/best",
 		"--extract-audio",
@@ -75,7 +73,6 @@ func (vp *VideoProcessor) downloadVideoAsMP3(videoURL string) (string, error) {
 		return "", fmt.Errorf("yt-dlp failed: %v, stderr: %s", err, stderr.String())
 	}
 
-	// Find the downloaded MP3 file
 	files, err := filepath.Glob("downloads/*.mp3")
 	if err != nil {
 		return "", fmt.Errorf("failed to find downloaded files: %v", err)
@@ -85,7 +82,6 @@ func (vp *VideoProcessor) downloadVideoAsMP3(videoURL string) (string, error) {
 		return "", fmt.Errorf("no MP3 file found after download")
 	}
 
-	// Return the most recently created file
 	var newestFile string
 	var newestTime time.Time
 	for _, file := range files {
@@ -109,16 +105,13 @@ func (vp *VideoProcessor) downloadVideoAsMP3(videoURL string) (string, error) {
 func (vp *VideoProcessor) uploadToAzuraCast(localFile string) (int, error) {
 	apiURL := fmt.Sprintf("https://%s/api/station/1/files", vp.azuraCastDomain)
 
-	// Read file content
 	fileContent, err := os.ReadFile(localFile)
 	if err != nil {
 		return 0, fmt.Errorf("failed to read file: %v", err)
 	}
 
-	// Encode to base64
 	encodedContent := base64.StdEncoding.EncodeToString(fileContent)
 
-	// Prepare request data
 	data := map[string]interface{}{
 		"path": filepath.Base(localFile),
 		"file": encodedContent,
@@ -129,7 +122,6 @@ func (vp *VideoProcessor) uploadToAzuraCast(localFile string) (int, error) {
 		return 0, fmt.Errorf("failed to marshal JSON: %v", err)
 	}
 
-	// Create HTTP request
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return 0, fmt.Errorf("failed to create request: %v", err)
@@ -138,7 +130,6 @@ func (vp *VideoProcessor) uploadToAzuraCast(localFile string) (int, error) {
 	req.Header.Set("X-API-Key", vp.azuraCastAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 
-	// Send request
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -151,7 +142,6 @@ func (vp *VideoProcessor) uploadToAzuraCast(localFile string) (int, error) {
 		return 0, fmt.Errorf("AzuraCast API upload error: %d %s", resp.StatusCode, string(body))
 	}
 
-	// Parse response
 	var response map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return 0, fmt.Errorf("failed to decode response: %v", err)
@@ -220,7 +210,7 @@ func (vp *VideoProcessor) getNextVideo() (*structs.VideoResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNoContent {
-		return nil, nil // No jobs available
+		return nil, nil
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -299,7 +289,6 @@ func (vp *VideoProcessor) markVideoFailed(uuid string) error {
 func (vp *VideoProcessor) processVideo(video *structs.VideoResponse) error {
 	log.Printf("Processing video: %s (UUID: %s, Playlist: %d)", video.VideoUrl, video.Uuid, video.PlaylistId)
 
-	// Download video as MP3
 	mp3File, err := vp.downloadVideoAsMP3(video.VideoUrl)
 	if err != nil {
 		return fmt.Errorf("failed to download video: %v", err)
@@ -310,13 +299,11 @@ func (vp *VideoProcessor) processVideo(video *structs.VideoResponse) error {
 		}
 	}()
 
-	// Upload to AzuraCast
 	songID, err := vp.uploadToAzuraCast(mp3File)
 	if err != nil {
 		return fmt.Errorf("failed to upload to AzuraCast: %v", err)
 	}
 
-	// Assign to playlist
 	if err := vp.assignPlaylistToSong(songID, video.PlaylistId); err != nil {
 		return fmt.Errorf("failed to assign playlist: %v", err)
 	}
@@ -329,7 +316,6 @@ func (vp *VideoProcessor) run() {
 	log.Println("Starting simplified video processing...")
 
 	for {
-		// Get next video to process
 		video, err := vp.getNextVideo()
 		if err != nil {
 			log.Printf("Error getting next video: %v", err)
@@ -340,11 +326,10 @@ func (vp *VideoProcessor) run() {
 
 		if video == nil {
 			log.Println("No videos to process, waiting 10 seconds...")
-			time.Sleep(10 * time.Second)
+			time.Sleep(5 * time.Second)
 			continue
 		}
 
-		// Process the video
 		log.Printf("Found video to process: %s", video.VideoUrl)
 		if err := vp.processVideo(video); err != nil {
 			log.Printf("Error processing video %s: %v", video.VideoUrl, err)
@@ -354,13 +339,11 @@ func (vp *VideoProcessor) run() {
 			continue
 		}
 
-		// Mark as complete
 		if err := vp.markVideoComplete(video.Uuid); err != nil {
 			log.Printf("Error marking video as complete: %v", err)
 		}
 
 		log.Printf("Completed processing video: %s", video.VideoUrl)
-		// Immediately look for the next video (no delay)
 	}
 }
 
