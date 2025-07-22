@@ -59,10 +59,11 @@ jobs:
             echo "should_build=true" >> $GITHUB_OUTPUT
           fi
 
-  build-amd64:
+  # Build and push multi-architecture images
+  build-and-push:
     needs: setup
     if: needs.setup.outputs.should_build == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     permissions:
       packages: write
     strategy:
@@ -71,6 +72,9 @@ jobs:
     steps:
       - name: Checkout code 🌿
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up QEMU ⚡
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392
 
       - name: Set up Docker Buildx 🛠️
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
@@ -82,90 +86,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push AMD64 image 🐳
+      - name: Build and push multi-arch image 🐳
         run: |
-          docker buildx build --platform linux/amd64 \
-            -t ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}-amd64 \
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -t ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }} \
+            -t ghcr.io/${{ github.repository }}/${{ matrix.component }}:latest \
             -f cmd/${{ matrix.component }}/Dockerfile \
             --push \
-            --provenance=false \
-            --cache-from=type=gha,scope=${{ matrix.component }}-amd64 \
-            --cache-to=type=gha,mode=max,scope=${{ matrix.component }}-amd64 .
+            --cache-from=type=gha,scope=${{ matrix.component }} \
+            --cache-to=type=gha,mode=max,scope=${{ matrix.component }} .
 
-  build-arm64:
-    needs: setup
-    if: needs.setup.outputs.should_build == 'true'
-    runs-on: ubuntu-24.04-arm
-    permissions:
-      packages: write
-    strategy:
-      matrix:
-        component: [server, client]
-    steps:
-      - name: Checkout code 🌿
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
-
-      - name: Set up Docker Buildx 🛠️
-        uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
-
-      - name: Log in to GHCR 🔑
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push ARM64 image 🐳
-        run: |
-          docker buildx build --platform linux/arm64 \
-            -t ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}-arm64 \
-            -f cmd/${{ matrix.component }}/Dockerfile \
-            --push \
-            --provenance=false \
-            --cache-from=type=gha,scope=${{ matrix.component }}-arm64 \
-            --cache-to=type=gha,mode=max,scope=${{ matrix.component }}-arm64 .
-
-  create-manifests:
-    needs: [setup, build-amd64, build-arm64]
-    if: needs.setup.outputs.should_build == 'true'
-    runs-on: ubuntu-24.04
-    permissions:
-      packages: write
-    strategy:
-      matrix:
-        component: [server, client]
-    steps:
-      - name: Log in to GHCR 🔑
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create and push multi-arch manifest 🏗️
-        run: |
-          # Enable experimental features for manifest commands
-          export DOCKER_CLI_EXPERIMENTAL=enabled
-
-          # Remove any existing manifests to avoid conflicts
-          docker manifest rm ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }} 2>/dev/null || true
-          docker manifest rm ghcr.io/${{ github.repository }}/${{ matrix.component }}:latest 2>/dev/null || true
-
-          # Create manifest for versioned tag
-          docker manifest create ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }} \
-            ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}-amd64 \
-            ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}-arm64
-
-          # Create manifest for latest tag
-          docker manifest create ghcr.io/${{ github.repository }}/${{ matrix.component }}:latest \
-            ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}-amd64 \
-            ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}-arm64
-
-          # Push manifests
-          docker manifest push ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}
-          docker manifest push ghcr.io/${{ github.repository }}/${{ matrix.component }}:latest  # Release job
+  # Release job
   release:
-    needs: [setup, create-manifests]
+    needs: [setup, build-and-push]
     if: needs.setup.outputs.should_build == 'true'
     runs-on: ubuntu-24.04
     permissions:
