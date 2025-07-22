@@ -10,9 +10,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Setup and version detection job
   setup:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     outputs:
@@ -60,11 +59,10 @@ jobs:
             echo "should_build=true" >> $GITHUB_OUTPUT
           fi
 
-  # Build AMD64 images on standard Ubuntu runner
   build-amd64:
     needs: setup
     if: needs.setup.outputs.should_build == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
     strategy:
@@ -90,10 +88,10 @@ jobs:
             -t ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}-amd64 \
             -f cmd/${{ matrix.component }}/Dockerfile \
             --push \
+            --provenance=false \
             --cache-from=type=gha,scope=${{ matrix.component }}-amd64 \
             --cache-to=type=gha,mode=max,scope=${{ matrix.component }}-amd64 .
 
-  # Build ARM64 images on ARM64 runner for optimal performance
   build-arm64:
     needs: setup
     if: needs.setup.outputs.should_build == 'true'
@@ -123,14 +121,14 @@ jobs:
             -t ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}-arm64 \
             -f cmd/${{ matrix.component }}/Dockerfile \
             --push \
+            --provenance=false \
             --cache-from=type=gha,scope=${{ matrix.component }}-arm64 \
             --cache-to=type=gha,mode=max,scope=${{ matrix.component }}-arm64 .
 
-  # Create and push multi-architecture manifests
   create-manifests:
     needs: [setup, build-amd64, build-arm64]
     if: needs.setup.outputs.should_build == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       packages: write
     strategy:
@@ -146,6 +144,13 @@ jobs:
 
       - name: Create and push multi-arch manifest 🏗️
         run: |
+          # Enable experimental features for manifest commands
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+
+          # Remove any existing manifests to avoid conflicts
+          docker manifest rm ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }} 2>/dev/null || true
+          docker manifest rm ghcr.io/${{ github.repository }}/${{ matrix.component }}:latest 2>/dev/null || true
+
           # Create manifest for versioned tag
           docker manifest create ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }} \
             ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}-amd64 \
@@ -158,13 +163,11 @@ jobs:
 
           # Push manifests
           docker manifest push ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ needs.setup.outputs.version }}
-          docker manifest push ghcr.io/${{ github.repository }}/${{ matrix.component }}:latest
-
-  # Release job
+          docker manifest push ghcr.io/${{ github.repository }}/${{ matrix.component }}:latest  # Release job
   release:
     needs: [setup, create-manifests]
     if: needs.setup.outputs.should_build == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
