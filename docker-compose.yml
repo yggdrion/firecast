@@ -34,8 +34,11 @@ services:
       - "8081:8080"
     env_file:
       - .env
+    environment:
+      - SERVER_URL=http://firecast-server:8080
     depends_on:
       - redis
+      - firecast-server
     networks:
       - firecast-network
     restart: unless-stopped
