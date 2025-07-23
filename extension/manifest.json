@@ -3,6 +3,11 @@
     "name": "Firecast",
     "version": "1.0",
     "description": "Add videos to Firecast playlists",
+    "applications": {
+        "gecko": {
+            "id": "firecast@yggdrion.dev"
+        }
+    },
     "permissions": [
         "activeTab",
         "storage",
