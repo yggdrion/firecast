@@ -76,15 +76,35 @@ async function fetchPlaylists(baseUrl, secret) {
 function displayPlaylists(playlists, currentUrl, settings) {
   playlistList.innerHTML = "";
 
+  // Color palette for playlists
+  const colors = [
+    "red",
+    "blue",
+    "green",
+    "purple",
+    "orange",
+    "pink",
+    "teal",
+    "yellow",
+  ];
+
   // Convert playlists object to array of [name, id] pairs and sort by name
   const playlistArray = Object.entries(playlists).sort((a, b) =>
     a[0].localeCompare(b[0])
   );
 
-  playlistArray.forEach(([name, id]) => {
+  playlistArray.forEach(([name, id], index) => {
     const listItem = document.createElement("li");
-    listItem.className = "playlist-item";
-    listItem.innerHTML = `<div class="playlist-name">${escapeHtml(name)}</div>`;
+
+    // Assign color based on index (cycling through colors)
+    const colorClass = `color-${colors[index % colors.length]}`;
+    listItem.className = `playlist-item ${colorClass}`;
+
+    // Add emoji based on playlist name for extra visual appeal
+    const emoji = getPlaylistEmoji(name);
+    listItem.innerHTML = `<div class="playlist-name">${emoji} ${escapeHtml(
+      name
+    )}</div>`;
 
     listItem.addEventListener("click", async function () {
       try {
@@ -104,6 +124,36 @@ function displayPlaylists(playlists, currentUrl, settings) {
   });
 
   playlistList.style.display = "block";
+}
+
+function getPlaylistEmoji(name) {
+  const nameLower = name.toLowerCase();
+
+  // Match common playlist themes with emojis
+  if (nameLower.includes("music") || nameLower.includes("song")) return "🎵";
+  if (nameLower.includes("movie") || nameLower.includes("film")) return "🎬";
+  if (nameLower.includes("comedy") || nameLower.includes("funny")) return "😂";
+  if (nameLower.includes("game") || nameLower.includes("gaming")) return "🎮";
+  if (nameLower.includes("news") || nameLower.includes("politics")) return "📰";
+  if (nameLower.includes("tech") || nameLower.includes("science")) return "🔬";
+  if (nameLower.includes("sport") || nameLower.includes("football"))
+    return "⚽";
+  if (nameLower.includes("food") || nameLower.includes("cooking")) return "🍳";
+  if (nameLower.includes("travel") || nameLower.includes("adventure"))
+    return "✈️";
+  if (nameLower.includes("animal") || nameLower.includes("pet")) return "🐾";
+  if (nameLower.includes("art") || nameLower.includes("creative")) return "🎨";
+  if (nameLower.includes("education") || nameLower.includes("learn"))
+    return "📚";
+  if (nameLower.includes("fitness") || nameLower.includes("workout"))
+    return "💪";
+  if (nameLower.includes("default") || nameLower.includes("main")) return "📋";
+  if (nameLower.includes("favorite") || nameLower.includes("fav")) return "⭐";
+  if (nameLower.includes("watch later") || nameLower.includes("later"))
+    return "⏰";
+
+  // Default emoji
+  return "📺";
 }
 
 async function addVideoToPlaylist(videoUrl, playlistId, settings) {
