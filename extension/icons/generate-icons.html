@@ -14,31 +14,113 @@
       function drawIcon(canvas, size) {
         const ctx = canvas.getContext("2d");
 
-        // Create gradient
-        const gradient = ctx.createLinearGradient(0, 0, size, size);
-        gradient.addColorStop(0, "#ff6b35");
-        gradient.addColorStop(1, "#f7931e");
+        // Create Firefox-inspired radial gradient with violet/orange
+        const gradient = ctx.createRadialGradient(
+          size * 0.3,
+          size * 0.2,
+          0,
+          size * 0.5,
+          size * 0.5,
+          size * 0.9
+        );
+        gradient.addColorStop(0, "#ff9500");
+        gradient.addColorStop(0.3, "#ff6000");
+        gradient.addColorStop(0.6, "#cc3300");
+        gradient.addColorStop(0.8, "#8a2be2");
+        gradient.addColorStop(1, "#4b0082");
 
         // Draw background with rounded corners
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.roundRect(0, 0, size, size, size * 0.1875); // 3px radius scaled
+        ctx.roundRect(0, 0, size, size, size * 0.1875);
         ctx.fill();
 
-        // Draw play triangle
-        ctx.fillStyle = "white";
-        ctx.beginPath();
-        const centerY = size / 2;
-        const leftX = size * 0.3125; // 5/16 scaled
-        const rightX = size * 0.6875; // 11/16 scaled
-        const topY = size * 0.25; // 4/16 scaled
-        const bottomY = size * 0.75; // 12/16 scaled
+        // Draw stylized fox with soundwaves
 
-        ctx.moveTo(leftX, topY);
-        ctx.lineTo(rightX, centerY);
-        ctx.lineTo(leftX, bottomY);
+        // Fox head silhouette
+        ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+        ctx.beginPath();
+        // Head shape
+        ctx.moveTo(size * 0.25, size * 0.8);
+        ctx.quadraticCurveTo(size * 0.2, size * 0.6, size * 0.25, size * 0.4);
+        ctx.quadraticCurveTo(size * 0.3, size * 0.25, size * 0.4, size * 0.3);
+        // Ear
+        ctx.lineTo(size * 0.35, size * 0.15);
+        ctx.lineTo(size * 0.45, size * 0.25);
+        // Top of head
+        ctx.quadraticCurveTo(size * 0.5, size * 0.2, size * 0.55, size * 0.3);
+        // Snout
+        ctx.quadraticCurveTo(size * 0.65, size * 0.4, size * 0.7, size * 0.5);
+        ctx.quadraticCurveTo(size * 0.65, size * 0.6, size * 0.6, size * 0.65);
+        // Jaw line back to neck
+        ctx.quadraticCurveTo(size * 0.45, size * 0.75, size * 0.25, size * 0.8);
         ctx.closePath();
         ctx.fill();
+
+        // Fox inner ear
+        ctx.fillStyle = "#ff6000";
+        ctx.beginPath();
+        ctx.moveTo(size * 0.37, size * 0.18);
+        ctx.lineTo(size * 0.35, size * 0.28);
+        ctx.lineTo(size * 0.42, size * 0.27);
+        ctx.closePath();
+        ctx.fill();
+
+        // Fox eye
+        ctx.fillStyle = "#4b0082";
+        ctx.beginPath();
+        ctx.arc(size * 0.42, size * 0.4, size * 0.025, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Fox nose
+        ctx.fillStyle = "#9a4dff";
+        ctx.beginPath();
+        ctx.arc(size * 0.65, size * 0.5, size * 0.02, 0, 2 * Math.PI);
+        ctx.fill();
+
+        // Sound waves emanating from fox mouth
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+        ctx.lineWidth = size * 0.025;
+
+        // Wave 1
+        ctx.beginPath();
+        ctx.arc(
+          size * 0.68,
+          size * 0.55,
+          size * 0.1,
+          -Math.PI / 6,
+          Math.PI / 6,
+          false
+        );
+        ctx.stroke();
+
+        // Wave 2
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+        ctx.lineWidth = size * 0.02;
+        ctx.beginPath();
+        ctx.arc(
+          size * 0.68,
+          size * 0.55,
+          size * 0.15,
+          -Math.PI / 4,
+          Math.PI / 4,
+          false
+        );
+        ctx.stroke();
+
+        // Wave 3
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.lineWidth = size * 0.015;
+        ctx.beginPath();
+        ctx.arc(
+          size * 0.68,
+          size * 0.55,
+          size * 0.2,
+          -Math.PI / 3,
+          Math.PI / 3,
+          false
+        );
+        ctx.stroke();
       }
 
       // Draw icons
