@@ -1,3 +1,11 @@
+## [1.2.3](https://github.com/yggdrion/firecast/compare/v1.2.2...v1.2.3) (2025-07-23)
+
+### Bug Fixes
+
+* handle yt playlists ([#19](https://github.com/yggdrion/firecast/issues/19)) ([5474eb6](https://github.com/yggdrion/firecast/commit/5474eb6f3de41f233b0b7f2484e645c68ec54f15))
+* only release on manual run ([#20](https://github.com/yggdrion/firecast/issues/20)) ([3f6564c](https://github.com/yggdrion/firecast/commit/3f6564cbe12aa6fc8f88cce79ccfb1fb7d2660ee))
+* playlist auth ([#18](https://github.com/yggdrion/firecast/issues/18)) ([73e13e8](https://github.com/yggdrion/firecast/commit/73e13e8d2cce40ae028775637596020421942aec))
+
 ## [1.2.2](https://github.com/yggdrion/firecast/compare/v1.2.1...v1.2.2) (2025-07-22)
 
 ### Bug Fixes

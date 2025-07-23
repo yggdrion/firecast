@@ -7,7 +7,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/lithammer/shortuuid/v4"
@@ -47,6 +49,50 @@ func NewHandler(rdb *redis.Client, fireCastSecret, azuraCastAPIKey, azuraCastDom
 		azuraCastAPIKey: azuraCastAPIKey,
 		azuraCastDomain: azuraCastDomain,
 	}
+}
+
+// cleanYouTubeURL cleans a YouTube URL to ensure it's a single video URL
+// If it's a playlist URL with a video, it extracts just the video part
+func (h *Handler) cleanYouTubeURL(videoURL string) (string, error) {
+	parsedURL, err := url.Parse(videoURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid URL format")
+	}
+
+	// Check if it's a YouTube domain
+	if !strings.Contains(parsedURL.Host, "youtube.com") && !strings.Contains(parsedURL.Host, "youtu.be") {
+		return "", fmt.Errorf("only YouTube URLs are allowed")
+	}
+
+	// Handle youtu.be short URLs
+	if strings.Contains(parsedURL.Host, "youtu.be") {
+		videoID := strings.TrimPrefix(parsedURL.Path, "/")
+		if videoID == "" {
+			return "", fmt.Errorf("invalid YouTube video URL")
+		}
+		return fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoID), nil
+	}
+
+	// Handle youtube.com URLs
+	queryParams := parsedURL.Query()
+	videoID := queryParams.Get("v")
+
+	// Check if it's a playlist URL without a video
+	if videoID == "" && queryParams.Get("list") != "" {
+		return "", fmt.Errorf("playlist URLs without a specific video are not allowed")
+	}
+
+	// Check if it's a direct playlist path
+	if strings.Contains(parsedURL.Path, "/playlist") {
+		return "", fmt.Errorf("playlist URLs are not allowed")
+	}
+
+	if videoID == "" {
+		return "", fmt.Errorf("invalid YouTube video URL")
+	}
+
+	// Return clean video URL without playlist parameters
+	return fmt.Sprintf("https://www.youtube.com/watch?v=%s", videoID), nil
 }
 
 func (h *Handler) AuthMiddleware(next http.Handler) http.Handler {
@@ -105,6 +151,13 @@ func (h *Handler) VideoAddHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Clean and validate the YouTube URL
+	cleanURL, err := h.cleanYouTubeURL(videoReq.VideoUrl)
+	if err != nil {
+		h.writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Invalid YouTube URL: %s", err.Error()))
+		return
+	}
+
 	videoUuid := shortuuid.New()
 
 	if err := h.rdb.LPush(ctx, "videos:queue", videoUuid).Err(); err != nil {
@@ -114,7 +167,7 @@ func (h *Handler) VideoAddHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	meta := map[string]any{
-		"url":             videoReq.VideoUrl,
+		"url":             cleanURL, // Use the cleaned URL
 		"playlist_id":     videoReq.PlaylistId,
 		"retries":         0,
 		"added_at":        time.Now().Unix(),
