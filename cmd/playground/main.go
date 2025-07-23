@@ -230,7 +230,14 @@ func status() *http.Response {
 func playlists() *http.Response {
 	fmt.Println("Retrieving playlists...")
 
-	resp, err := http.Get("http://localhost:8080/playlists")
+	req, err := createAuthenticatedRequest("GET", "http://localhost:8080/playlists", nil)
+	if err != nil {
+		fmt.Println("Error creating request:", err)
+		return nil
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
 		return nil
