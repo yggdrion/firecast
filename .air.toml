@@ -2,4 +2,4 @@
 cmd = "go build -o ./tmp/main.exe ./cmd/server/"
 bin = "./tmp/main.exe"
 include_ext = ["go"]
-include_dir = [ "pkg", "cmd/server" ]
+include_dir = [ "pkg", "cmd\server" ]

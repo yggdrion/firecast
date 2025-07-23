@@ -30,14 +30,16 @@ func main() {
 	fireCastSecret := os.Getenv("FIRECAST_SECRET")
 	azuraCastApiKey := os.Getenv("AZURACAST_API_KEY")
 	azuraCastDomain := os.Getenv("AZURACAST_DOMAIN")
+	redisHost := os.Getenv("REDIS_HOST")
+	redisPort := os.Getenv("REDIS_PORT")
 
-	if fireCastSecret == "" || azuraCastApiKey == "" || azuraCastDomain == "" {
-		fmt.Println("Environment variables FIRECAST_SECRET, AZURACAST_API_KEY, and AZURACAST_DOMAIN must be set")
+	if fireCastSecret == "" || azuraCastApiKey == "" || azuraCastDomain == "" || redisHost == "" || redisPort == "" {
+		fmt.Println("Environment variables FIRECAST_SECRET, AZURACAST_API_KEY, AZURACAST_DOMAIN, REDIS_HOST, and REDIS_PORT must be set")
 		return
 	}
 
 	rdb = redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: fmt.Sprintf("%s:%s", redisHost, redisPort),
 		DB:   0,
 	})
 
