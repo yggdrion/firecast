@@ -56,10 +56,10 @@ func main() {
 
 	r.Get("/health", h.HealthzHandler)
 	r.Get("/healthz", h.HealthzHandler)
-	r.Get("/playlists", h.PlaylistsHandler)
 
 	r.Group(func(r chi.Router) {
 		r.Use(h.AuthMiddleware)
+		r.Get("/playlists", h.PlaylistsHandler)
 		r.Post("/video/add", h.VideoAddHandler)
 		r.Get("/video/get", h.VideoGetHandler)
 		r.Post("/video/done", h.VideoDoneHandler)
