@@ -2,14 +2,6 @@ services:
   firecast-client:
     image: ghcr.io/yggdrion/firecast/client:latest
     container_name: firecast-client
-    ports:
-      - "8081:8080"
     env_file:
       - .env
-    networks:
-      - firecast-network
     restart: unless-stopped
-
-networks:
-  firecast-network:
-    external: true
