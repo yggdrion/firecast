@@ -27,19 +27,6 @@ services:
       - firecast-network
     restart: unless-stopped
 
-  firecast-client:
-    image: ghcr.io/yggdrion/firecast/client:latest
-    container_name: firecast-client
-    ports:
-      - "8081:8080"
-    env_file:
-      - .env
-    depends_on:
-      - redis
-    networks:
-      - firecast-network
-    restart: unless-stopped
-
 volumes:
   redis_data:
 
