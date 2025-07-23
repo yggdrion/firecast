@@ -1,3 +1,11 @@
+## [1.2.4](https://github.com/yggdrion/firecast/compare/v1.2.3...v1.2.4) (2025-07-23)
+
+### Bug Fixes
+
+* add docker-compose samples ([d86bf34](https://github.com/yggdrion/firecast/commit/d86bf3495f1c3e5fe292d69d3555e8e931da05c1))
+* redis env ([ab9981d](https://github.com/yggdrion/firecast/commit/ab9981d5765b510a8179bdca35e1acda079c826e))
+* run actions on main push ([#21](https://github.com/yggdrion/firecast/issues/21)) ([c0ba93f](https://github.com/yggdrion/firecast/commit/c0ba93f7c252a1aec82f25a71917e37fd0ded935))
+
 ## [1.2.3](https://github.com/yggdrion/firecast/compare/v1.2.2...v1.2.3) (2025-07-23)
 
 ### Bug Fixes
