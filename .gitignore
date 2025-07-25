@@ -201,3 +201,4 @@ cython_debug/
 tmp/
 video_requests.json
 valkey-data/
+extension/web-ext-artifacts/
