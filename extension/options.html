@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        width: 500px;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        color: #e0e6ed;
+        margin: 0;
+        min-height: 100vh;
+      }
+
+      .container {
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      }
+
+      h1 {
+        color: #ffffff;
+        margin-top: 0;
+        font-size: 24px;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #e0e6ed;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        font-size: 14px;
+        box-sizing: border-box;
+        background: rgba(255, 255, 255, 0.1);
+        color: #e0e6ed;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+      }
+
+      input[type="text"]:focus,
+      input[type="password"]:focus {
+        outline: none;
+        border-color: #63b3ed;
+        box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.2);
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      input[type="text"]::placeholder,
+      input[type="password"]::placeholder {
+        color: #a0a6b8;
+      }
+
+      .help-text {
+        font-size: 12px;
+        color: #a0a6b8;
+        margin-top: 5px;
+        font-style: italic;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 30px;
+      }
+
+      button {
+        padding: 12px 24px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        font-weight: 500;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+
+      .save-btn {
+        background: linear-gradient(135deg, #63b3ed, #4299e1);
+        color: white;
+      }
+
+      .save-btn:hover {
+        background: linear-gradient(135deg, #4299e1, #3182ce);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(99, 179, 237, 0.4);
+      }
+
+      .test-btn {
+        background: linear-gradient(135deg, #68d391, #48bb78);
+        color: white;
+      }
+
+      .test-btn:hover {
+        background: linear-gradient(135deg, #48bb78, #38a169);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(104, 211, 145, 0.4);
+      }
+
+      .reset-btn {
+        background: linear-gradient(135deg, #a0aec0, #718096);
+        color: white;
+      }
+
+      .reset-btn:hover {
+        background: linear-gradient(135deg, #718096, #4a5568);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(160, 174, 192, 0.4);
+      }
+
+      .status {
+        padding: 12px;
+        border-radius: 8px;
+        margin-top: 15px;
+        display: none;
+        backdrop-filter: blur(10px);
+        border: 1px solid;
+      }
+
+      .status.success {
+        background: rgba(74, 222, 128, 0.1);
+        color: #4ade80;
+        border-color: rgba(74, 222, 128, 0.3);
+      }
+
+      .status.error {
+        background: rgba(255, 107, 107, 0.1);
+        color: #ff6b6b;
+        border-color: rgba(255, 107, 107, 0.3);
+      }
+
+      .status.info {
+        background: rgba(99, 179, 237, 0.1);
+        color: #63b3ed;
+        border-color: rgba(99, 179, 237, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Firecast Settings</h1>
+
+      <form id="settingsForm">
+        <div class="form-group">
+          <label for="firecastUrl">Firecast URL:</label>
+          <input
+            type="text"
+            id="firecastUrl"
+            placeholder="https://your-firecast-server.com"
+          />
+          <div class="help-text">
+            The base URL of your Firecast server (without trailing slash)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="firecastSecret">Secret (Optional):</label>
+          <input
+            type="password"
+            id="firecastSecret"
+            placeholder="Your API secret/token"
+          />
+          <div class="help-text">
+            Authentication secret if your Firecast server requires it
+          </div>
+        </div>
+
+        <div class="button-group">
+          <button type="submit" class="save-btn">Save Settings</button>
+          <button type="button" class="test-btn" id="testBtn">
+            Test Connection
+          </button>
+          <button type="button" class="reset-btn" id="resetBtn">Reset</button>
+        </div>
+      </form>
+
+      <div id="status" class="status"></div>
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

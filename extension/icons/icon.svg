@@ -1,0 +1,33 @@
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Firefox-inspired gradient with violet/orange -->
+    <radialGradient id="bgGrad" cx="30%" cy="20%">
+      <stop offset="0%" style="stop-color:#ff9500;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#ff6000;stop-opacity:1" />
+      <stop offset="60%" style="stop-color:#cc3300;stop-opacity:1" />
+      <stop offset="80%" style="stop-color:#8a2be2;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4b0082;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Rounded background -->
+  <rect width="16" height="16" rx="3" fill="url(#bgGrad)"/>
+  
+  <!-- Fox head silhouette -->
+  <path d="M 4 12.8 Q 3.2 9.6, 4 6.4 Q 4.8 4, 6.4 4.8 L 5.6 2.4 L 7.2 4 Q 8 3.2, 8.8 4.8 Q 10.4 6.4, 11.2 8 Q 10.4 9.6, 9.6 10.4 Q 7.2 12, 4 12.8 Z" 
+        fill="rgba(255, 255, 255, 0.95)"/>
+  
+  <!-- Fox inner ear -->
+  <path d="M 5.92 2.88 L 5.6 4.48 L 6.72 4.32 Z" fill="#ff6000"/>
+  
+  <!-- Fox eye -->
+  <circle cx="6.72" cy="6.4" r="0.4" fill="#4b0082"/>
+  
+  <!-- Fox nose -->
+  <circle cx="10.4" cy="8" r="0.32" fill="#9a4dff"/>
+  
+  <!-- Sound waves from fox mouth -->
+  <path d="M 10.88 8.8 Q 12.48 8, 12.48 8.8" stroke="rgba(255, 255, 255, 0.8)" stroke-width="0.4" fill="none"/>
+  <path d="M 10.88 8.8 Q 13.28 7.2, 13.28 9.6" stroke="rgba(255, 255, 255, 0.6)" stroke-width="0.32" fill="none"/>
+  <path d="M 10.88 8.8 Q 14.08 6.4, 14.08 11.2" stroke="rgba(255, 255, 255, 0.4)" stroke-width="0.24" fill="none"/>
+</svg>

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        width: 300px;
+        padding: 10px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        background: linear-gradient(135deg, #1a1a2e, #16213e);
+        color: #e0e6ed;
+        margin: 0;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #3a3a5c;
+        padding-bottom: 10px;
+      }
+
+      .title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #ffffff;
+        text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+      }
+
+      .settings-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        cursor: pointer;
+        font-size: 16px;
+        color: #e0e6ed;
+        padding: 8px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+      }
+
+      .settings-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: scale(1.05);
+      }
+
+      .loading {
+        text-align: center;
+        color: #a0a6b8;
+        padding: 20px;
+        font-style: italic;
+      }
+
+      .error {
+        color: #ff6b6b;
+        padding: 12px;
+        background: rgba(255, 107, 107, 0.1);
+        border: 1px solid rgba(255, 107, 107, 0.3);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        backdrop-filter: blur(10px);
+      }
+
+      .playlist-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .playlist-item {
+        padding: 12px;
+        border: 2px solid;
+        border-radius: 8px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .playlist-item::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: inherit;
+      }
+
+      .playlist-item.color-red {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 99, 99, 0.2),
+          rgba(255, 99, 99, 0.1)
+        );
+        border-color: #ff6363;
+        color: #ffb3b3;
+        box-shadow: 0 0 20px rgba(255, 99, 99, 0.1);
+      }
+
+      .playlist-item.color-blue {
+        background: linear-gradient(
+          135deg,
+          rgba(99, 179, 237, 0.2),
+          rgba(99, 179, 237, 0.1)
+        );
+        border-color: #63b3ed;
+        color: #b3d9ff;
+        box-shadow: 0 0 20px rgba(99, 179, 237, 0.1);
+      }
+
+      .playlist-item.color-green {
+        background: linear-gradient(
+          135deg,
+          rgba(104, 211, 145, 0.2),
+          rgba(104, 211, 145, 0.1)
+        );
+        border-color: #68d391;
+        color: #b3f0c7;
+        box-shadow: 0 0 20px rgba(104, 211, 145, 0.1);
+      }
+
+      .playlist-item.color-purple {
+        background: linear-gradient(
+          135deg,
+          rgba(183, 148, 246, 0.2),
+          rgba(183, 148, 246, 0.1)
+        );
+        border-color: #b794f6;
+        color: #d9ccff;
+        box-shadow: 0 0 20px rgba(183, 148, 246, 0.1);
+      }
+
+      .playlist-item.color-orange {
+        background: linear-gradient(
+          135deg,
+          rgba(246, 173, 85, 0.2),
+          rgba(246, 173, 85, 0.1)
+        );
+        border-color: #f6ad55;
+        color: #ffd9b3;
+        box-shadow: 0 0 20px rgba(246, 173, 85, 0.1);
+      }
+
+      .playlist-item.color-pink {
+        background: linear-gradient(
+          135deg,
+          rgba(246, 135, 179, 0.2),
+          rgba(246, 135, 179, 0.1)
+        );
+        border-color: #f687b3;
+        color: #ffccdd;
+        box-shadow: 0 0 20px rgba(246, 135, 179, 0.1);
+      }
+
+      .playlist-item.color-teal {
+        background: linear-gradient(
+          135deg,
+          rgba(91, 213, 160, 0.2),
+          rgba(91, 213, 160, 0.1)
+        );
+        border-color: #5bd5a0;
+        color: #b3f0d4;
+        box-shadow: 0 0 20px rgba(91, 213, 160, 0.1);
+      }
+
+      .playlist-item.color-yellow {
+        background: linear-gradient(
+          135deg,
+          rgba(246, 224, 94, 0.2),
+          rgba(246, 224, 94, 0.1)
+        );
+        border-color: #f6e05e;
+        color: #fff2b3;
+        box-shadow: 0 0 20px rgba(246, 224, 94, 0.1);
+      }
+
+      .playlist-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(20px);
+      }
+
+      .playlist-item:active {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      .playlist-name {
+        font-weight: 500;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+      }
+
+      .success {
+        color: #4ade80;
+        padding: 12px;
+        background: rgba(74, 222, 128, 0.1);
+        border: 1px solid rgba(74, 222, 128, 0.3);
+        border-radius: 8px;
+        margin-bottom: 10px;
+        backdrop-filter: blur(10px);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="title">Firecast</div>
+      <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
+    </div>
+
+    <div id="content">
+      <div class="loading" id="loading">Loading playlists...</div>
+      <div class="error" id="error" style="display: none"></div>
+      <div class="success" id="success" style="display: none"></div>
+      <ul class="playlist-list" id="playlistList" style="display: none"></ul>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
