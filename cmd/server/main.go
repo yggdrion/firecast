@@ -24,7 +24,7 @@ var (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Println("Error loading .env file")
+		fmt.Println("Error loading .env file - using environment variables")
 	}
 
 	fireCastSecret := os.Getenv("FIRECAST_SECRET")
