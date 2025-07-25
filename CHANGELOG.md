@@ -1,3 +1,15 @@
+## [1.3.0](https://github.com/yggdrion/firecast/compare/v1.2.5...v1.3.0) (2025-07-25)
+
+### Bug Fixes
+
+* playground url ([eaf8ba2](https://github.com/yggdrion/firecast/commit/eaf8ba277bbcef002751da597d68df05dacbf11f))
+* update gitignore ([926ba4b](https://github.com/yggdrion/firecast/commit/926ba4bfaf3ff67ac3349be59946790cba06e3a3))
+
+### Features
+
+* firefox extension ([#23](https://github.com/yggdrion/firecast/issues/23)) ([e5d9dca](https://github.com/yggdrion/firecast/commit/e5d9dca009efa51b60d8da35bc89d474222792c5))
+* traefik with ssl cert ([#22](https://github.com/yggdrion/firecast/issues/22)) ([a900ef7](https://github.com/yggdrion/firecast/commit/a900ef71e563d5dd058804e8b5ac8d68549a27b5))
+
 ## [1.2.5](https://github.com/yggdrion/firecast/compare/v1.2.4...v1.2.5) (2025-07-23)
 
 ### Bug Fixes
