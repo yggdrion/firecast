@@ -1,3 +1,11 @@
+## [1.2.5](https://github.com/yggdrion/firecast/compare/v1.2.4...v1.2.5) (2025-07-23)
+
+### Bug Fixes
+
+* docker compose ports ([7350f87](https://github.com/yggdrion/firecast/commit/7350f8725f6a7d4d0d91937efe7c27740ea81035))
+* docker compose server url ([d7a0165](https://github.com/yggdrion/firecast/commit/d7a0165dd3688acedbf010c1a53a7db51614894c))
+* exclude changelog from typos ([1184ebd](https://github.com/yggdrion/firecast/commit/1184ebd8f3fdbc42b1a3965eaf07f2967ce49482))
+
 ## [1.2.4](https://github.com/yggdrion/firecast/compare/v1.2.3...v1.2.4) (2025-07-23)
 
 ### Bug Fixes

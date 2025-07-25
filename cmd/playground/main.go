@@ -13,10 +13,15 @@ import (
 )
 
 var fireCastSecret string
+var fireCastUrl string
 
 func init() {
 	_ = godotenv.Load()
 	fireCastSecret = os.Getenv("FIRECAST_SECRET")
+	fireCastUrl = os.Getenv("FIRECAST_DOMAIN")
+	if fireCastUrl == "" {
+		fireCastUrl = "http://localhost:8080" // fallback to localhost if not set
+	}
 }
 
 func createAuthenticatedRequest(method, url string, body *bytes.Buffer) (*http.Request, error) {
@@ -90,7 +95,7 @@ func printPlaylistsResponse(resp *http.Response) {
 }
 
 func health() *http.Response {
-	resp, err := http.Get("http://localhost:8080/healthz")
+	resp, err := http.Get(fireCastUrl + "/healthz")
 	if err != nil {
 		fmt.Println("Error making GET request:", err)
 		return nil
@@ -118,7 +123,7 @@ func add() *http.Response {
 		return nil
 	}
 
-	req, err := createAuthenticatedRequest("POST", "http://localhost:8080/video/add", bytes.NewBuffer(jsonData))
+	req, err := createAuthenticatedRequest("POST", fireCastUrl+"/video/add", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return nil
@@ -136,7 +141,7 @@ func add() *http.Response {
 func get() *http.Response {
 	fmt.Println("Retrieving video...")
 
-	req, err := createAuthenticatedRequest("GET", "http://localhost:8080/video/get", nil)
+	req, err := createAuthenticatedRequest("GET", fireCastUrl+"/video/get", nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return nil
@@ -165,7 +170,7 @@ func done() *http.Response {
 
 	fmt.Println("Marking video as done:", videoUuid)
 
-	req, err := createAuthenticatedRequest("POST", "http://localhost:8080/video/done", bytes.NewBuffer(jsonData))
+	req, err := createAuthenticatedRequest("POST", fireCastUrl+"/video/done", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return nil
@@ -194,7 +199,7 @@ func fail() *http.Response {
 
 	fmt.Println("Failing video:", videoUuid)
 
-	req, err := createAuthenticatedRequest("POST", "http://localhost:8080/video/fail", bytes.NewBuffer(jsonData))
+	req, err := createAuthenticatedRequest("POST", fireCastUrl+"/video/fail", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return nil
@@ -212,7 +217,7 @@ func fail() *http.Response {
 func status() *http.Response {
 	fmt.Println("Retrieving status...")
 
-	req, err := createAuthenticatedRequest("GET", "http://localhost:8080/status", nil)
+	req, err := createAuthenticatedRequest("GET", fireCastUrl+"/status", nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return nil
@@ -230,7 +235,7 @@ func status() *http.Response {
 func playlists() *http.Response {
 	fmt.Println("Retrieving playlists...")
 
-	req, err := createAuthenticatedRequest("GET", "http://localhost:8080/playlists", nil)
+	req, err := createAuthenticatedRequest("GET", fireCastUrl+"/playlists", nil)
 	if err != nil {
 		fmt.Println("Error creating request:", err)
 		return nil
