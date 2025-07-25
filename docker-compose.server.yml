@@ -1,4 +1,32 @@
 services:
+  traefik:
+    image: traefik:v3.0
+    container_name: firecast-traefik
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:8000"
+      - "--entrypoints.websecure.address=:8443"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+    ports:
+      - "80:8000" # HTTP - maps to standard port for Let's Encrypt
+      - "443:8443" # HTTPS - maps to standard port for Let's Encrypt
+    #  - "8080:8080" # Traefik dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt_data:/letsencrypt
+    networks:
+      - firecast-network
+    restart: unless-stopped
+
   redis:
     image: redis:alpine
     container_name: firecast-redis
@@ -12,8 +40,6 @@ services:
   firecast-server:
     image: ghcr.io/yggdrion/firecast/server:latest
     container_name: firecast-server
-    ports:
-      - "8080:8080"
     env_file:
       - .env
     environment:
@@ -24,9 +50,18 @@ services:
     networks:
       - firecast-network
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.firecast-server.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.firecast-server.entrypoints=websecure"
+      - "traefik.http.routers.firecast-server.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.firecast-server-http.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.firecast-server-http.entrypoints=web"
+      - "traefik.http.services.firecast-server.loadbalancer.server.port=8080"
 
 volumes:
   redis_data:
+  letsencrypt_data:
 
 networks:
   firecast-network:

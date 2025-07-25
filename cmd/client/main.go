@@ -28,12 +28,12 @@ type VideoProcessor struct {
 func NewVideoProcessor() (*VideoProcessor, error) {
 	err := godotenv.Load()
 	if err != nil {
-		log.Println("Warning: Error loading .env file")
+		log.Println("Warning: Error loading .env file - using environment variables")
 	}
 
 	azuraCastAPIKey := os.Getenv("AZURACAST_API_KEY")
 	azuraCastDomain := os.Getenv("AZURACAST_DOMAIN")
-	serverURL := os.Getenv("SERVER_URL")
+	serverURL := os.Getenv("FIRECAST_DOMAIN")
 	fireCastSecret := os.Getenv("FIRECAST_SECRET")
 
 	if azuraCastAPIKey == "" || azuraCastDomain == "" || fireCastSecret == "" {

@@ -15,4 +15,5 @@ docker-compose -f docker-compose.server.yml up -d
 # Run client-side only (after creating network)
 
 docker network create firecast-network
+
 docker-compose -f docker-compose.client.yml up -d
